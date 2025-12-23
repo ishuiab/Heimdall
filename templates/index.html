@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heimdall - Order Viewer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        header h1 {
+            font-size: 1.8rem;
+            color: #00d4ff;
+        }
+        
+        header span {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+        
+        .filter-group label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        select {
+            padding: 10px 12px;
+            border: 1px solid #444;
+            border-radius: 6px;
+            background: #252525;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        select:hover {
+            border-color: #00d4ff;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #00d4ff;
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: #00b8e0;
+        }
+        
+        .btn-secondary {
+            background: #333;
+            color: #e0e0e0;
+        }
+        
+        .btn-secondary:hover {
+            background: #444;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #888;
+            text-transform: uppercase;
+            margin-top: 5px;
+        }
+        
+        .stat-card.buy .stat-value { color: #00ff88; }
+        .stat-card.sell .stat-value { color: #ff6b6b; }
+        .stat-card.rejected .stat-value { color: #ff9f43; }
+        
+        .table-container {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        
+        th {
+            background: #252525;
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        tr:hover td {
+            background: #222;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .badge-buy {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+        
+        .badge-sell {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+        }
+        
+        .badge-complete {
+            background: rgba(0, 212, 255, 0.15);
+            color: #00d4ff;
+        }
+        
+        .badge-rejected {
+            background: rgba(255, 159, 67, 0.15);
+            color: #ff9f43;
+        }
+        
+        .badge-pending {
+            background: rgba(255, 255, 255, 0.1);
+            color: #888;
+        }
+        
+        .badge-intraday {
+            background: rgba(255, 206, 86, 0.15);
+            color: #ffce56;
+        }
+        
+        .badge-cnc {
+            background: rgba(153, 102, 255, 0.15);
+            color: #9966ff;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state p {
+            margin-top: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #333;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ Heimdall</h1>
+            <span>Order Viewer</span>
+        </header>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label>Broker</label>
+                <select id="broker" onchange="onBrokerChange()">
+                    <option value="">Select Broker</option>
+                    {% for broker in brokers %}
+                    <option value="{{ broker.id }}">{{ broker.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Account</label>
+                <select id="account" onchange="onAccountChange()" disabled>
+                    <option value="">Select Account</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Date</label>
+                <select id="date" onchange="onDateChange()" disabled>
+                    <option value="">All Dates</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Stock</label>
+                <select id="symbol" onchange="onSymbolChange()" disabled>
+                    <option value="">All Stocks</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="status" disabled>
+                    <option value="">All Statuses</option>
+                </select>
+            </div>
+            
+            <div class="filter-group" style="justify-content: flex-end;">
+                <button class="btn btn-primary" onclick="loadOrders()">
+                    Load Orders
+                </button>
+            </div>
+            
+            <div class="filter-group" style="justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="resetFilters()">
+                    Reset
+                </button>
+            </div>
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-total">-</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+            <div class="stat-card buy">
+                <div class="stat-value" id="stat-buy">-</div>
+                <div class="stat-label">Buy Orders</div>
+            </div>
+            <div class="stat-card sell">
+                <div class="stat-value" id="stat-sell">-</div>
+                <div class="stat-label">Sell Orders</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-completed">-</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card rejected">
+                <div class="stat-value" id="stat-rejected">-</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-symbols">-</div>
+                <div class="stat-label">Symbols</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading orders...</p>
+            </div>
+            
+            <div id="empty-state" class="empty-state">
+                <h3>No Orders Loaded</h3>
+                <p>Select filters and click "Load Orders" to view data</p>
+            </div>
+            
+            <div class="table-scroll" id="table-container" style="display: none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Symbol</th>
+                            <th>Exchange</th>
+                            <th>Type</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Status</th>
+                            <th>Order Type</th>
+                            <th>Product</th>
+                            <th>Order Time</th>
+                            <th>Exec Time</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-body">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Utility to get current filter values
+        function getFilters() {
+            return {
+                broker: document.getElementById('broker').value,
+                account: document.getElementById('account').value,
+                date: document.getElementById('date').value,
+                symbol: document.getElementById('symbol').value,
+                status: document.getElementById('status').value
+            };
+        }
+        
+        // Fetch wrapper
+        async function fetchJSON(url) {
+            const response = await fetch(url);
+            return response.json();
+        }
+        
+        // Populate a select element
+        function populateSelect(id, options, defaultText = "Select...") {
+            const select = document.getElementById(id);
+            const currentValue = select.value;
+            select.innerHTML = `<option value="">${defaultText}</option>`;
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                select.appendChild(option);
+            });
+            // Restore value if still valid
+            if (options.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+        
+        // Broker changed
+        async function onBrokerChange() {
+            const broker = document.getElementById('broker').value;
+            const accountSelect = document.getElementById('account');
+            const dateSelect = document.getElementById('date');
+            const symbolSelect = document.getElementById('symbol');
+            const statusSelect = document.getElementById('status');
+            
+            if (!broker) {
+                accountSelect.disabled = true;
+                dateSelect.disabled = true;
+                symbolSelect.disabled = true;
+                statusSelect.disabled = true;
+                return;
+            }
+            
+            accountSelect.disabled = false;
+            const accounts = await fetchJSON(`/api/accounts?broker=${broker}`);
+            populateSelect('account', accounts, 'Select Account');
+            
+            dateSelect.innerHTML = '<option value="">All Dates</option>';
+            dateSelect.disabled = true;
+            symbolSelect.innerHTML = '<option value="">All Stocks</option>';
+            symbolSelect.disabled = true;
+            statusSelect.innerHTML = '<option value="">All Statuses</option>';
+            statusSelect.disabled = true;
+        }
+        
+        // Account changed
+        async function onAccountChange() {
+            const { account } = getFilters();
+            const dateSelect = document.getElementById('date');
+            const symbolSelect = document.getElementById('symbol');
+            const statusSelect = document.getElementById('status');
+            
+            if (!account) {
+                dateSelect.disabled = true;
+                symbolSelect.disabled = true;
+                statusSelect.disabled = true;
+                return;
+            }
+            
+            dateSelect.disabled = false;
+            symbolSelect.disabled = false;
+            statusSelect.disabled = false;
+            
+            const [dates, symbols, statuses] = await Promise.all([
+                fetchJSON(`/api/dates?account=${account}`),
+                fetchJSON(`/api/symbols?account=${account}`),
+                fetchJSON(`/api/statuses?account=${account}`)
+            ]);
+            
+            populateSelect('date', dates, 'All Dates');
+            populateSelect('symbol', symbols, 'All Stocks');
+            populateSelect('status', statuses, 'All Statuses');
+        }
+        
+        // Date changed
+        async function onDateChange() {
+            const { account, date } = getFilters();
+            const symbols = await fetchJSON(`/api/symbols?account=${account}&date=${date}`);
+            populateSelect('symbol', symbols, 'All Stocks');
+        }
+        
+        // Symbol changed
+        function onSymbolChange() {
+            // Optional: auto-load on symbol change
+        }
+        
+        // Parse exec time from spl_remarks
+        // Format: "ordenttm=1763534696|norentm=12:14:56 19-11-2025|exch_tm=19-11-2025 12:14:56"
+        function parseExecTime(splRemarks) {
+            if (!splRemarks) return 'NA';
+            
+            // Look for exch_tm= pattern
+            const match = splRemarks.match(/exch_tm=([^|]+)/);
+            if (match && match[1]) {
+                return match[1].trim();
+            }
+            return 'NA';
+        }
+        
+        // Format date/time for display
+        function formatDateTime(isoString) {
+            if (!isoString) return '-';
+            const date = new Date(isoString);
+            return date.toLocaleString('en-IN', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+        
+        // Get badge class for transaction type
+        function getTxnBadge(type) {
+            if (type === 'B') return '<span class="badge badge-buy">BUY</span>';
+            if (type === 'S') return '<span class="badge badge-sell">SELL</span>';
+            return '-';
+        }
+        
+        // Get badge class for status
+        function getStatusBadge(status) {
+            const s = (status || '').toUpperCase();
+            if (s.includes('COMPLETE')) return `<span class="badge badge-complete">${status}</span>`;
+            if (s.includes('REJECT')) return `<span class="badge badge-rejected">${status}</span>`;
+            return `<span class="badge badge-pending">${status}</span>`;
+        }
+        
+        // Get badge for product type
+        function getProductBadge(type) {
+            if (type === 'I') return '<span class="badge badge-intraday">INTRADAY</span>';
+            if (type === 'C') return '<span class="badge badge-cnc">CNC</span>';
+            return type || '-';
+        }
+        
+        // Load orders
+        async function loadOrders() {
+            const { broker, account, date, symbol, status } = getFilters();
+            
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('empty-state');
+            const tableContainer = document.getElementById('table-container');
+            
+            loading.classList.add('active');
+            emptyState.style.display = 'none';
+            tableContainer.style.display = 'none';
+            
+            try {
+                // Build query string
+                const params = new URLSearchParams();
+                if (broker) params.append('broker', broker);
+                if (account) params.append('account', account);
+                if (date) params.append('date', date);
+                if (symbol) params.append('symbol', symbol);
+                if (status) params.append('status', status);
+                
+                // Fetch orders and stats in parallel
+                const [orders, stats] = await Promise.all([
+                    fetchJSON(`/api/orders?${params}`),
+                    fetchJSON(`/api/stats?${params}`)
+                ]);
+                
+                // Update stats
+                document.getElementById('stat-total').textContent = stats.total_orders || 0;
+                document.getElementById('stat-buy').textContent = stats.buy_orders || 0;
+                document.getElementById('stat-sell').textContent = stats.sell_orders || 0;
+                document.getElementById('stat-completed').textContent = stats.completed || 0;
+                document.getElementById('stat-rejected').textContent = stats.rejected || 0;
+                document.getElementById('stat-symbols').textContent = stats.unique_symbols || 0;
+                
+                // Render orders
+                const tbody = document.getElementById('orders-body');
+                
+                if (orders.length === 0) {
+                    emptyState.innerHTML = '<h3>No Orders Found</h3><p>Try adjusting your filters</p>';
+                    emptyState.style.display = 'block';
+                } else {
+                    tbody.innerHTML = orders.map(order => `
+                        <tr>
+                            <td>${order.order_id || '-'}</td>
+                            <td><strong>${order.symbol || '-'}</strong></td>
+                            <td>${order.exchange || '-'}</td>
+                            <td>${getTxnBadge(order.transaction_type)}</td>
+                            <td>${order.price ? '₹' + parseFloat(order.price).toFixed(2) : '-'}</td>
+                            <td>${order.qty || '-'}</td>
+                            <td>${getStatusBadge(order.status)}</td>
+                            <td>${order.order_type || '-'}</td>
+                            <td>${getProductBadge(order.product_type)}</td>
+                            <td>${formatDateTime(order.order_time || order.created_at)}</td>
+                            <td>${parseExecTime(order.spl_remarks)}</td>
+                            <td>${order.remarks || order.rejection_reason || '-'}</td>
+                        </tr>
+                    `).join('');
+                    tableContainer.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading orders:', error);
+                emptyState.innerHTML = '<h3>Error Loading Orders</h3><p>Check console for details</p>';
+                emptyState.style.display = 'block';
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        // Reset all filters
+        function resetFilters() {
+            document.getElementById('broker').value = '';
+            document.getElementById('account').innerHTML = '<option value="">Select Account</option>';
+            document.getElementById('account').disabled = true;
+            document.getElementById('date').innerHTML = '<option value="">All Dates</option>';
+            document.getElementById('date').disabled = true;
+            document.getElementById('symbol').innerHTML = '<option value="">All Stocks</option>';
+            document.getElementById('symbol').disabled = true;
+            document.getElementById('status').innerHTML = '<option value="">All Statuses</option>';
+            document.getElementById('status').disabled = true;
+            
+            // Reset stats
+            ['stat-total', 'stat-buy', 'stat-sell', 'stat-completed', 'stat-rejected', 'stat-symbols'].forEach(id => {
+                document.getElementById(id).textContent = '-';
+            });
+            
+            // Reset table
+            document.getElementById('table-container').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'block';
+            document.getElementById('empty-state').innerHTML = '<h3>No Orders Loaded</h3><p>Select filters and click "Load Orders" to view data</p>';
+        }
+    </script>
+</body>
+</html>
