@@ -5,6 +5,8 @@ Uses HTMX for dynamic updates without heavy JavaScript frameworks
 
 from flask import Flask, render_template, request, jsonify
 import psycopg2
+import os
+import json
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -12,8 +14,11 @@ load_dotenv()
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, date
 from config import Config
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.config["APPLICATION_ROOT"] = "/heimdall"
+app.wsgi_app = ProxyFix(app.wsgi_app, x_prefix=1)
 
 def get_db_connection():
     """Create a database connection"""
@@ -41,6 +46,9 @@ def execute_query(query, params=None):
 BROKERS = [
     {"id": "shoonya", "name": "Shoonya", "table": "shoonya_orders"}
 ]
+
+# Config files directory
+CONFIG_DIR = "/home/algobaba/DATALORE/hypotheis/FMV_SCALPER/configs"
 
 @app.route("/")
 def index():
@@ -129,8 +137,8 @@ def get_orders():
     broker = request.args.get("broker", "shoonya")
     account = request.args.get("account")
     order_date = request.args.get("date")
-    symbol = request.args.get("symbol")
-    status = request.args.get("status")
+    symbols = request.args.getlist("symbol")  # Multiple symbols
+    statuses = request.args.getlist("status")  # Multiple statuses
     
     query = f"""
         SELECT 
@@ -164,13 +172,15 @@ def get_orders():
         query += " AND DATE(created_at) = %s"
         params.append(order_date)
     
-    if symbol:
-        query += " AND symbol = %s"
-        params.append(symbol)
+    if symbols:
+        placeholders = ','.join(['%s'] * len(symbols))
+        query += f" AND symbol IN ({placeholders})"
+        params.extend(symbols)
     
-    if status:
-        query += " AND status = %s"
-        params.append(status)
+    if statuses:
+        placeholders = ','.join(['%s'] * len(statuses))
+        query += f" AND status IN ({placeholders})"
+        params.extend(statuses)
     
     query += " ORDER BY order_id ASC LIMIT 500"
     
@@ -190,8 +200,8 @@ def get_stats():
     """Get summary statistics for filters"""
     account = request.args.get("account")
     order_date = request.args.get("date")
-    symbol = request.args.get("symbol")
-    status = request.args.get("status")
+    symbols = request.args.getlist("symbol")  # Multiple symbols
+    statuses = request.args.getlist("status")  # Multiple statuses
     
     query = f"""
         SELECT 
@@ -214,16 +224,90 @@ def get_stats():
         query += " AND DATE(created_at) = %s"
         params.append(order_date)
     
-    if symbol:
-        query += " AND symbol = %s"
-        params.append(symbol)
+    if symbols:
+        placeholders = ','.join(['%s'] * len(symbols))
+        query += f" AND symbol IN ({placeholders})"
+        params.extend(symbols)
     
-    if status:
-        query += " AND status = %s"
-        params.append(status)
+    if statuses:
+        placeholders = ','.join(['%s'] * len(statuses))
+        query += f" AND status IN ({placeholders})"
+        params.extend(statuses)
     
     stats = execute_query(query, tuple(params))
     return jsonify(stats[0] if stats else {})
+
+# ============ Config Editor API Routes ============
+
+@app.route("/api/config/files")
+def get_config_files():
+    """Get list of JSON config files"""
+    try:
+        files = []
+        if os.path.exists(CONFIG_DIR):
+            for f in sorted(os.listdir(CONFIG_DIR)):
+                if f.endswith('.json'):
+                    filepath = os.path.join(CONFIG_DIR, f)
+                    files.append({
+                        "name": f,
+                        "size": os.path.getsize(filepath),
+                        "modified": os.path.getmtime(filepath)
+                    })
+        return jsonify({"success": True, "files": files})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/config/file/<filename>")
+def get_config_file(filename):
+    """Get content of a specific config file"""
+    try:
+        # Security: ensure filename doesn't contain path traversal
+        if '..' in filename or '/' in filename:
+            return jsonify({"success": False, "error": "Invalid filename"}), 400
+        
+        filepath = os.path.join(CONFIG_DIR, filename)
+        if not os.path.exists(filepath):
+            return jsonify({"success": False, "error": "File not found"}), 404
+        
+        with open(filepath, 'r') as f:
+            content = json.load(f)
+        
+        return jsonify({"success": True, "filename": filename, "content": content})
+    except json.JSONDecodeError as e:
+        return jsonify({"success": False, "error": f"Invalid JSON: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/config/file/<filename>", methods=["POST"])
+def save_config_file(filename):
+    """Save content to a config file"""
+    try:
+        # Security: ensure filename doesn't contain path traversal
+        if '..' in filename or '/' in filename:
+            return jsonify({"success": False, "error": "Invalid filename"}), 400
+        
+        filepath = os.path.join(CONFIG_DIR, filename)
+        
+        data = request.get_json()
+        if data is None:
+            return jsonify({"success": False, "error": "No JSON data provided"}), 400
+        
+        content = data.get('content')
+        if content is None:
+            return jsonify({"success": False, "error": "No content provided"}), 400
+        
+        # Validate it's valid JSON by parsing it
+        if isinstance(content, str):
+            content = json.loads(content)
+        
+        with open(filepath, 'w') as f:
+            json.dump(content, f, indent=4)
+        
+        return jsonify({"success": True, "message": f"File {filename} saved successfully"})
+    except json.JSONDecodeError as e:
+        return jsonify({"success": False, "error": f"Invalid JSON: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
