@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Heimdall - Order Viewer</title>
+    <link rel="icon" type="image/png" href="/static/heimdall.png">
     <style>
         * {
             box-sizing: border-box;
@@ -451,310 +452,1581 @@
             display: block;
         }
         
-        /* Config Editor Styles */
-        .config-container {
-            display: grid;
-            grid-template-columns: 280px 1fr;
+        /* Config Editor - Compact Styles */
+        :root { --cyan: #00d4ff; --bg-dark: #1a1a1a; --bg-mid: #252525; --border: #333; --text-primary: #e0e0e0; --text-secondary: #888; --text-tertiary: #666; }
+        .config-container { display: grid; grid-template-columns: 280px 1fr; gap: 20px; min-height: 70vh; }
+        .config-file-list, .config-editor-panel { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+        .config-file-list-header, .config-editor-header { padding: 15px; background: var(--bg-mid); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .config-file-list-header h3 { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+        .config-editor-header h3 { font-size: 1rem; color: var(--cyan); }
+        .config-file-list-header button { background: var(--border); border: none; color: var(--text-primary); padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: background 0.15s; }
+        .config-file-list-header button:hover { background: #444; }
+        .config-files { max-height: 60vh; overflow-y: auto; }
+        .config-file-item { padding: 12px 15px; border-bottom: 1px solid #2a2a2a; cursor: pointer; transition: background 0.15s; }
+        .config-file-item:hover { background: #222; }
+        .config-file-item.active { background: rgba(0, 212, 255, 0.1); border-left: 3px solid var(--cyan); }
+        .config-file-item .filename { font-size: 0.9rem; color: var(--text-primary); word-break: break-all; }
+        .config-file-item .file-meta { font-size: 0.75rem; color: var(--text-tertiary); margin-top: 4px; }
+        .config-editor-actions { display: flex; gap: 10px; }
+        .config-editor-body { flex: 1; padding: 15px; display: flex; flex-direction: column; }
+        .config-empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-tertiary); text-align: center; padding: 40px; }
+        .config-empty-state h3 { margin-bottom: 10px; color: var(--text-secondary); }
+        
+        /* Heartbeat Monitor Styles */
+        .heartbeat-container {
+            display: flex;
+            flex-direction: column;
             gap: 20px;
-            min-height: 70vh;
         }
         
-        .config-file-list {
+        .heartbeat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+        }
+        
+        .heartbeat-header h3 {
+            color: #00d4ff;
+            font-size: 1.1rem;
+        }
+        
+        .heartbeat-overall {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .heartbeat-overall-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .heartbeat-overall-status.healthy {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+        
+        .heartbeat-overall-status.degraded {
+            background: rgba(255, 159, 67, 0.15);
+            color: #ff9f43;
+        }
+        
+        .heartbeat-overall-status.warning {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+        
+        .heartbeat-overall-status.unhealthy {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+        }
+        
+        .heartbeat-services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        
+        .service-card {
             background: #1a1a1a;
             border: 1px solid #333;
             border-radius: 8px;
             overflow: hidden;
+            transition: border-color 0.2s;
         }
         
-        .config-file-list-header {
-            padding: 15px;
-            background: #252525;
-            border-bottom: 1px solid #333;
+        .service-card.healthy {
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+        
+        .service-card.warning {
+            border-color: rgba(255, 193, 7, 0.3);
+        }
+        
+        .service-card.unhealthy {
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+        
+        .service-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-        
-        .config-file-list-header h3 {
-            font-size: 0.9rem;
-            color: #888;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .config-file-list-header button {
-            background: #333;
-            border: none;
-            color: #e0e0e0;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        
-        .config-file-list-header button:hover {
-            background: #444;
-        }
-        
-        .config-files {
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-        
-        .config-file-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #2a2a2a;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-        
-        .config-file-item:hover {
-            background: #222;
-        }
-        
-        .config-file-item.active {
-            background: rgba(0, 212, 255, 0.1);
-            border-left: 3px solid #00d4ff;
-        }
-        
-        .config-file-item .filename {
-            font-size: 0.9rem;
-            color: #e0e0e0;
-            word-break: break-all;
-        }
-        
-        .config-file-item .file-meta {
-            font-size: 0.75rem;
-            color: #666;
-            margin-top: 4px;
-        }
-        
-        .config-editor-panel {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .config-editor-header {
-            padding: 15px;
+            padding: 15px 20px;
             background: #252525;
             border-bottom: 1px solid #333;
+        }
+        
+        .service-name {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-        
-        .config-editor-header h3 {
-            font-size: 1rem;
-            color: #00d4ff;
-        }
-        
-        .config-editor-actions {
-            display: flex;
             gap: 10px;
-        }
-        
-        .config-editor-body {
-            flex: 1;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .json-editor {
-            flex: 1;
-            width: 100%;
-            min-height: 400px;
-            background: #0f0f0f;
-            border: 1px solid #444;
-            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
             color: #e0e0e0;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 0.9rem;
-            padding: 15px;
-            resize: vertical;
-            line-height: 1.5;
         }
         
-        .json-editor:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+        .service-icon {
+            font-size: 1.3rem;
         }
         
-        .config-empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #666;
-            text-align: center;
-            padding: 40px;
+        .service-status-badge {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
         
-        .config-empty-state h3 {
-            margin-bottom: 10px;
-            color: #888;
-        }
-        
-        .config-status {
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            display: none;
-        }
-        
-        .config-status.success {
-            display: block;
-            background: rgba(0, 255, 136, 0.1);
+        .service-status-badge.healthy {
+            background: rgba(0, 255, 136, 0.15);
             color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.3);
         }
         
-        .config-status.error {
-            display: block;
+        .service-status-badge.warning {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+        
+        .service-status-badge.unhealthy {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+        }
+        
+        .service-card-body {
+            padding: 20px;
+        }
+        
+        .service-detail {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+        
+        .service-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .service-detail-label {
+            color: #888;
+            font-size: 0.85rem;
+        }
+        
+        .service-detail-value {
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .service-message {
+            margin-top: 15px;
+            padding: 12px;
+            background: #0f0f0f;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #888;
+            word-break: break-word;
+        }
+        
+        .service-message.error {
             background: rgba(255, 107, 107, 0.1);
             color: #ff6b6b;
-            border: 1px solid rgba(255, 107, 107, 0.3);
+            border: 1px solid rgba(255, 107, 107, 0.2);
         }
         
-        /* Form-based JSON Editor */
-        .json-form {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            overflow-y: auto;
-            max-height: 65vh;
-            padding-right: 10px;
+        .service-message.warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.2);
         }
         
-        .json-field-group {
-            background: #252525;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        
-        .json-field-group-title {
+        .heartbeat-timestamp {
+            color: #666;
             font-size: 0.85rem;
-            color: #00d4ff;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #333;
         }
         
-        .json-field {
+        .heartbeat-refresh-btn {
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
+            gap: 8px;
         }
         
-        .json-field:last-child {
-            margin-bottom: 0;
-        }
-        
-        .json-field-label {
-            min-width: 140px;
-            font-size: 0.85rem;
+        .heartbeat-auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             color: #888;
+            font-size: 0.85rem;
         }
         
-        .json-field-input {
-            flex: 1;
-            padding: 8px 12px;
-            background: #1a1a1a;
-            border: 1px solid #444;
-            border-radius: 6px;
-            color: #e0e0e0;
-            font-size: 0.9rem;
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        }
-        
-        .json-field-input:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
-        }
-        
-        .json-field-input.number {
-            max-width: 120px;
-        }
-        
-        .json-field-input.boolean {
-            width: auto;
+        .heartbeat-auto-refresh input[type="checkbox"] {
             accent-color: #00d4ff;
         }
         
-        .json-nested-fields {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
+        .heartbeat-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
         }
         
-        .json-nested-field {
+        .token-validity-section {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        
+        .token-validity-section.healthy {
+            border-color: rgba(0, 255, 136, 0.3);
+        }
+        
+        .token-validity-section.unhealthy {
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+        
+        .token-validity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+        }
+        
+        .token-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        
+        .token-validity-body {
+            padding: 20px;
+        }
+        
+        .token-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-mid);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .token-table thead {
+            background: var(--bg-dark);
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        
+        .token-table th {
+            padding: 12px;
+            text-align: left;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .token-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        
+        .token-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .token-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .token-status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .token-status-badge.valid {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        
+        .token-status-badge.invalid {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        .token-status-badge.error {
+            background: rgba(255, 80, 80, 0.12);
+            color: #ff3b3b;
+            border: 1px solid rgba(255, 59, 59, 0.12);
+        }
+        
+        /* Tickers Tab Styles */
+        .tickers-container {
+            padding: 20px;
+        }
+        
+        .tickers-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .tickers-header h3 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 1.2rem;
+        }
+        
+        .tickers-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .tickers-auto-refresh {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .tickers-auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .tickers-auto-refresh label {
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .tickers-content {
+            overflow-x: auto;
+            background: var(--bg-mid);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        
+        .tickers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .tickers-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+        
+        .tickers-table th {
+            padding: 12px 12px;
+            text-align: right;
+            color: var(--cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--cyan);
+            white-space: nowrap;
+        }
+        
+        .tickers-table th:first-child {
+            text-align: left;
+        }
+        
+        .tickers-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid var(--border);
+            word-break: break-word;
+            text-align: right;
+        }
+        
+        .tickers-table td:first-child {
+            text-align: left;
+        }
+        
+        .tickers-table tbody tr {
+            transition: background 0.2s ease;
+        }
+        
+        .tickers-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .tickers-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        .value-up {
+            color: #4ade80;
+            font-weight: 500;
+        }
+        
+        .value-down {
+            color: #ff6b6b;
+            font-weight: 500;
+        }
+        
+        .value-neutral {
+            color: #fbbf24;
+        }
+        
+        .ticker-name {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        
+        .exchange-tag {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--cyan);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .tickers-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .ticker-key {
+            color: var(--cyan);
+            font-weight: 600;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+        }
+        
+        .ticker-data {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .token-empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        
+        /* Positions Tab Styles */
+        .positions-container {
+            padding: 20px;
+        }
+        
+        .positions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .positions-header h3 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 1.2rem;
+        }
+        
+        .positions-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .positions-auto-refresh {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .positions-auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--cyan);
+        }
+        
+        .positions-auto-refresh label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .positions-account-select {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .positions-account-select label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .positions-account-select select {
+            min-width: 200px;
+        }
+        
+        .positions-content {
+            background: var(--bg-mid);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .positions-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .positions-empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+        
+        .positions-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .positions-table-container {
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+        
+        .positions-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        
+        .positions-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+        
+        .positions-table th {
+            padding: 12px;
+            text-align: right;
+            color: var(--cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--cyan);
+            white-space: nowrap;
+        }
+        
+        .positions-table th:first-child,
+        .positions-table th:nth-child(2) {
+            text-align: left;
+        }
+        
+        .positions-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: right;
+        }
+        
+        .positions-table td:first-child,
+        .positions-table td:nth-child(2) {
+            text-align: left;
+        }
+        
+        .positions-table tbody tr {
+            transition: background 0.2s ease;
+        }
+        
+        .positions-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .positions-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        .positions-table .symbol-cell {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+        
+        .positions-table .pnl-positive {
+            color: #4ade80;
+            font-weight: 600;
+        }
+        
+        .positions-table .pnl-negative {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+        
+        .positions-table .qty-buy {
+            color: #4ade80;
+        }
+        
+        .positions-table .qty-sell {
+            color: #ff6b6b;
+        }
+        
+        .positions-account-badge {
+            display: inline-block;
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--cyan);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .positions-account-section {
+            margin-bottom: 25px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .positions-account-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 20px;
+            background: var(--bg-mid);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .positions-account-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .positions-count {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            margin-left: auto;
+        }
+        
+        .positions-token-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .positions-token-status.valid {
+            background: rgba(0, 255, 136, 0.15);
+            color: #00ff88;
+        }
+        
+        .positions-token-status.invalid {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+        }
+        
+        .positions-token-status.missing {
+            background: rgba(255, 159, 67, 0.15);
+            color: #ff9f43;
+        }
+        
+        .positions-token-status.error,
+        .positions-token-status.unknown {
+            background: rgba(255, 159, 67, 0.15);
+            color: #ff9f43;
+        }
+        
+        .positions-account-error {
+            padding: 20px;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .positions-account-empty {
+            padding: 30px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .positions-account-cumulative {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(100, 150, 255, 0.05) 100%);
+            border-top: 2px solid var(--cyan);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .positions-account-cumulative-item {
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
-        
-        .json-nested-field label {
-            font-size: 0.75rem;
-            color: #666;
-            text-transform: capitalize;
+
+        .positions-account-cumulative-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .positions-account-cumulative-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .positions-account-cumulative-value.positive {
+            color: #4ade80;
+        }
+
+        .positions-account-cumulative-value.negative {
+            color: #ff6b6b;
+        }
+
+        .positions-account-cumulative-value.neutral {
+            color: var(--text-primary);
         }
         
-        .json-array-field {
+        .positions-content {
+            background: transparent;
+            border: none;
+        }
+        
+        .positions-summary-section {
+            margin-bottom: 25px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .positions-summary-header {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(100, 150, 255, 0.05) 100%);
+            border-bottom: 1px solid var(--border);
         }
         
-        .json-array-item {
+        .positions-summary-header h4 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 0.9rem;
+        }
+        
+        .positions-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        
+        .positions-summary-table thead {
+            background: var(--bg-mid);
+        }
+        
+        .positions-summary-table th {
+            padding: 8px 10px;
+            text-align: right;
+            color: var(--cyan);
+            font-weight: 600;
+            font-size: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .positions-summary-table th:first-child,
+        .positions-summary-table th:nth-child(2),
+        .positions-summary-table th:nth-child(3),
+        .positions-summary-table th:nth-child(4) {
+            text-align: left;
+        }
+        
+        .positions-summary-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            text-align: right;
+        }
+        
+        .positions-summary-table td:first-child,
+        .positions-summary-table td:nth-child(2),
+        .positions-summary-table td:nth-child(3),
+        .positions-summary-table td:nth-child(4) {
+            text-align: left;
+        }
+        
+        .positions-summary-table tbody tr:hover {
+            filter: brightness(1.1);
+        }
+        
+        .positions-summary-table .total-row {
+            background: rgba(0, 212, 255, 0.15) !important;
+            font-weight: 600;
+        }
+        
+        .positions-summary-table .total-row td {
+            border-top: 2px solid var(--cyan);
+            padding: 10px 10px;
+        }
+        
+        .positions-summary-table .total-row td:first-child {
+            text-align: left;
+        }
+        
+        .positions-summary-table .total-row td:nth-child(2),
+        .positions-summary-table .total-row td:nth-child(3),
+        .positions-summary-table .total-row td:nth-child(4) {
+            text-align: right;
+        }
+        
+        /* Account row color groups */
+        .positions-summary-table .account-group-0 {
+            background: rgba(0, 212, 255, 0.05);
+        }
+        
+        .positions-summary-table .account-group-1 {
+            background: rgba(153, 102, 255, 0.08);
+        }
+        
+        .positions-summary-table .account-group-2 {
+            background: rgba(255, 159, 67, 0.08);
+        }
+        
+        .positions-summary-table .account-group-3 {
+            background: rgba(0, 255, 136, 0.05);
+        }
+        
+        .positions-summary-table .account-group-4 {
+            background: rgba(255, 107, 107, 0.05);
+        }
+        
+        .positions-summary-table .broker-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        
+        .positions-summary-table .broker-badge.shoonya {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+        }
+        
+        .positions-summary-table .broker-badge.dhan {
+            background: rgba(0, 212, 255, 0.2);
+            color: #00d4ff;
+        }
+        
+        /* P&L color coding for summary table */
+        .positions-summary-table .pnl-positive {
+            color: #4ade80 !important;
+            font-weight: 600;
+        }
+        
+        .positions-summary-table .pnl-negative {
+            color: #ff6b6b !important;
+            font-weight: 600;
+        }
+
+        /* Funds Tab Styles */
+        .funds-container {
+            padding: 20px;
+        }
+
+        .funds-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .funds-header h3 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 1.2rem;
+        }
+
+        .funds-content {
+            background: var(--bg-mid);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .funds-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .funds-empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .funds-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .funds-table-container {
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+
+        .funds-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .funds-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+
+        .funds-table th {
+            padding: 12px;
+            text-align: right;
+            color: var(--cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--cyan);
+            white-space: nowrap;
+        }
+
+        .funds-table th:first-child,
+        .funds-table th:nth-child(2) {
+            text-align: left;
+        }
+
+        .funds-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            text-align: right;
+        }
+
+        .funds-table td:first-child,
+        .funds-table td:nth-child(2) {
+            text-align: left;
+        }
+
+        .funds-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .funds-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .funds-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .funds-table .broker-cell {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        .funds-table .account-cell {
+            color: var(--text-primary);
+        }
+
+        .funds-table .balance-positive {
+            color: #4ade80;
+            font-weight: 600;
+        }
+
+        .funds-table .balance-neutral {
+            color: var(--text-primary);
+        }
+
+        .funds-table .usage-safe {
+            background: rgba(74, 222, 128, 0.15);
+            color: #4ade80;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .funds-table .usage-warning {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .funds-table .usage-critical {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff6b6b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .funds-account-error {
+            padding: 20px;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .config-status { padding: 10px 15px; border-radius: 6px; margin-bottom: 15px; display: none; }
+        .config-status.success { display: block; background: rgba(0, 255, 136, 0.1); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
+        .config-status.error { display: block; background: rgba(255, 107, 107, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .json-form { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 65vh; padding-right: 8px; }
+        .json-field-group { background: var(--bg-mid); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+        .json-field-group-title { font-size: 0.8rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
+        .json-field { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .json-field:last-child { margin-bottom: 0; }
+        .json-field-label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+        .json-field-input { padding: 6px 8px; background: var(--bg-dark); border: 1px solid #444; border-radius: 4px; color: var(--text-primary); font-size: 0.85rem; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; transition: border-color 0.15s; }
+        .json-field-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15); }
+        .json-field-input.number { max-width: 100px; }
+        .json-field-input.boolean { width: 18px; height: 18px; }
+        .json-nested-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px; }
+        .json-nested-field { display: flex; flex-direction: column; gap: 3px; }
+        .json-nested-field label { font-size: 0.75rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .json-nested-field input { font-size: 0.8rem; padding: 5px 6px; }
+        .json-array-field { display: flex; flex-direction: column; gap: 6px; }
+        .json-array-item { display: flex; gap: 6px; align-items: center; }
+        .json-array-item input { flex: 1; font-size: 0.8rem; padding: 5px 6px; }
+        .json-array-item button { background: #ff6b6b; border: none; color: white; width: 24px; height: 24px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; transition: background 0.15s; padding: 0; }
+        .json-array-item button:hover { background: #ff5252; }
+        .json-array-add { background: var(--border); border: 1px dashed #555; color: var(--text-secondary); padding: 5px 6px; border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.75rem; transition: all 0.15s; }
+        .json-array-add:hover { background: #3a3a3a; border-color: var(--cyan); color: var(--cyan); }
+        
+        /* Redis Orders Tab Styles */
+        .redis-orders-container {
+            padding: 20px;
+        }
+
+        .redis-orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .redis-orders-header h3 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 1.2rem;
+        }
+
+        .redis-orders-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .redis-orders-auto-refresh {
             display: flex;
             gap: 8px;
             align-items: center;
         }
-        
-        .json-array-item input {
-            flex: 1;
-        }
-        
-        .json-array-item button {
-            background: #ff6b6b;
-            border: none;
-            color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 4px;
+
+        .redis-orders-auto-refresh input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
             cursor: pointer;
-            font-size: 1rem;
+            accent-color: var(--cyan);
         }
-        
-        .json-array-item button:hover {
-            background: #ff5252;
+
+        .redis-orders-auto-refresh label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            user-select: none;
         }
-        
-        .json-array-add {
-            background: #333;
-            border: 1px dashed #555;
-            color: #888;
-            padding: 8px;
+
+        .redis-orders-filters {
+            margin-bottom: 20px;
+        }
+
+        .redis-orders-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        /* Token Management Tab Styles */
+        .tokens-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tokens-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tokens-header h3 {
+            margin: 0;
+            color: var(--cyan);
+            font-size: 1.3rem;
+        }
+
+        .tokens-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tokens-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(100, 150, 255, 0.05) 100%);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+        }
+
+        .tokens-stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .tokens-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tokens-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        .tokens-content {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .tokens-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .tokens-table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .tokens-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .tokens-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+
+        .tokens-table th {
+            padding: 12px 15px;
+            text-align: left;
+            color: var(--cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--cyan);
+            white-space: nowrap;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tokens-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .tokens-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        .tokens-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        .tokens-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .token-broker {
+            color: var(--cyan);
+            font-weight: 600;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .token-account {
+            color: var(--text-primary);
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+
+        .token-input-cell {
+            position: relative;
+        }
+
+        .token-input-wrapper {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .token-input-field {
+            flex: 1;
+            padding: 8px 10px;
+            background: var(--bg-mid);
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Monaco', 'Menlo', monospace;
+            transition: border-color 0.15s;
+            min-width: 200px;
+        }
+
+        .token-input-field:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15);
+        }
+
+        .token-reveal-btn {
+            background: var(--border);
+            border: none;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
             border-radius: 6px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+
+        .token-reveal-btn:hover {
+            background: #555;
+            color: var(--cyan);
+        }
+
+        .token-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .token-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .token-check-btn {
+            background: var(--border);
+            color: var(--text-secondary);
+        }
+
+        .token-check-btn:hover:not(:disabled) {
+            background: #555;
+            color: var(--text-primary);
+        }
+
+        .token-save-btn {
+            background: #4ade80;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .token-save-btn:hover:not(:disabled) {
+            background: #22c55e;
+        }
+
+        .token-save-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .token-copy-btn {
+            background: var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .token-copy-btn:hover {
+            background: #555;
+            color: var(--cyan);
+        }
+
+        .token-status-cell {
             text-align: center;
+        }
+
+        .token-status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .token-status-indicator.valid {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+
+        .token-status-indicator.invalid {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+
+        .token-status-indicator.checking {
+            background: rgba(0, 212, 255, 0.2);
+            color: var(--cyan);
+        }
+
+        .token-status-indicator.error {
+            background: rgba(255, 159, 67, 0.2);
+            color: #ff9f43;
+        }
+
+        .token-status-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .token-status-dot.checking {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .tokens-empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .tokens-empty-state h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        /* Service Management Styles */
+        .service-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #333;
+        }
+        
+        .service-action-btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #333;
+        }
+        
+        .service-action-btn:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+            transform: translateY(-2px);
+        }
+        
+        .service-action-btn.start-btn {
+            background: rgba(0, 212, 255, 0.1);
+        }
+        
+        .service-action-btn.stop-btn {
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .service-action-btn.logs-btn {
+            background: rgba(74, 222, 128, 0.1);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .log-modal {
+            max-height: 90vh;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .modal-header h2 {
+            color: #00d4ff;
+            font-size: 1.3rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .modal-close:hover {
+            color: #ff6b6b;
+        }
+        
+        .modal-info {
+            padding: 10px 20px;
+            background: #0f0f0f;
+            border-bottom: 1px solid #333;
             font-size: 0.85rem;
         }
         
-        .json-array-add:hover {
-            background: #3a3a3a;
-            border-color: #00d4ff;
-            color: #00d4ff;
+        .modal-body {
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            background: #0f0f0f;
+        }
+        
+        .log-body {
+            background: #0a0a0a;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+        
+        .modal-body pre {
+            margin: 0;
+            color: #4ade80;
+        }
+        
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            padding: 20px;
+            border-top: 1px solid #333;
+            justify-content: flex-end;
+        }
+        
+        .modal-footer .btn {
+            padding: 10px 20px;
+        }
+        
+        /* Scrollbar Styles for Log Viewer */
+        .modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .modal-body::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 </head>
@@ -767,12 +2039,208 @@
         
         <!-- Tab Navigation -->
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('orders')">📊 Orders</button>
-            <button class="tab-btn" onclick="switchTab('config')">⚙️ Config Editor</button>
+            <button class="tab-btn active" data-tab="positions" onclick="switchTab('positions')">📋 Positions</button>
+            <button class="tab-btn" data-tab="funds" onclick="switchTab('funds')">💰 Funds</button>
+            <button class="tab-btn" data-tab="redis-orders" onclick="switchTab('redis-orders')">🔴 Orders</button>
+            <button class="tab-btn" data-tab="config" onclick="switchTab('config')">⚙️ Config Editor</button>
+            <button class="tab-btn" data-tab="heartbeat" onclick="switchTab('heartbeat')">💓 Heartbeat</button>
+            <button class="tab-btn" data-tab="tickers" onclick="switchTab('tickers')">📈 Tickers</button>
+            <button class="tab-btn" data-tab="token-management" onclick="switchTab('token-management')">🔐 Token Management</button>
+            <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">📊 Order History</button>
         </div>
         
+        <!-- Positions Tab -->
+        <div id="positions-tab" class="tab-content active">
+            <div class="positions-container">
+                <div class="positions-header">
+                    <h3>📋 Account Positions</h3>
+                    <div class="positions-controls">
+                        <div class="positions-auto-refresh">
+                            <input type="checkbox" id="positions-auto-refresh" onchange="togglePositionsAutoRefresh()" />
+                            <label for="positions-auto-refresh">Auto-refresh (5s)</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadAllPositions()">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <div class="positions-content" id="positions-content">
+                    <div class="positions-loading">
+                        <div class="spinner"></div>
+                        <p>Loading positions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Positions Tab -->
+        
+        <!-- Funds Tab -->
+        <div id="funds-tab" class="tab-content">
+            <div class="funds-container">
+                <div class="funds-header">
+                    <h3>💰 Account Funds</h3>
+                    <button class="btn btn-primary" onclick="loadFunds()">🔄 Refresh</button>
+                </div>
+                
+                <div class="funds-content" id="funds-content">
+                    <div class="funds-loading">
+                        <div class="spinner"></div>
+                        <p>Loading funds data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Funds Tab -->
+        
+        <!-- Redis Orders Tab -->
+        <div id="redis-orders-tab" class="tab-content">
+            <div class="redis-orders-container">
+                <div class="redis-orders-header">
+                    <h3>🔴 Redis Orders</h3>
+                    <div class="redis-orders-controls">
+                        <div class="redis-orders-auto-refresh">
+                            <input type="checkbox" id="redis-orders-auto-refresh" onchange="toggleRedisOrdersAutoRefresh()" />
+                            <label for="redis-orders-auto-refresh">Auto-refresh (5s)</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadRedisOrders()">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <div class="filters redis-orders-filters">
+                    <div class="filter-group">
+                        <label>Broker</label>
+                        <select id="redis-broker" onchange="onRedisBrokerChange()">
+                            <option value="">Select Broker</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Account</label>
+                        <select id="redis-account" onchange="onRedisAccountChange()" disabled>
+                            <option value="">Select Account</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Exchange</label>
+                        <div class="checkbox-dropdown" id="redis-exchange-dropdown">
+                            <div class="checkbox-dropdown-trigger disabled" onclick="toggleDropdown('redis-exchange-dropdown')">
+                                <span class="selected-text">All Exchanges</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="checkbox-dropdown-menu">
+                                <div class="checkbox-dropdown-actions">
+                                    <button type="button" class="select-all" onclick="selectAll('redis-exchange-dropdown')">Select All</button>
+                                    <button type="button" class="clear-all" onclick="clearAll('redis-exchange-dropdown')">Clear</button>
+                                </div>
+                                <div class="checkbox-dropdown-items"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Stocks</label>
+                        <div class="checkbox-dropdown" id="redis-symbol-dropdown" style="min-width: 220px;">
+                            <div class="checkbox-dropdown-trigger disabled" onclick="toggleDropdown('redis-symbol-dropdown')">
+                                <span class="selected-text">All Stocks</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="checkbox-dropdown-menu">
+                                <div class="checkbox-dropdown-actions">
+                                    <button type="button" class="select-all" onclick="selectAll('redis-symbol-dropdown')">Select All</button>
+                                    <button type="button" class="clear-all" onclick="clearAll('redis-symbol-dropdown')">Clear</button>
+                                </div>
+                                <div class="checkbox-dropdown-items"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label>Statuses</label>
+                        <div class="checkbox-dropdown" id="redis-status-dropdown">
+                            <div class="checkbox-dropdown-trigger disabled" onclick="toggleDropdown('redis-status-dropdown')">
+                                <span class="selected-text">All Statuses</span>
+                                <span class="arrow">▼</span>
+                            </div>
+                            <div class="checkbox-dropdown-menu">
+                                <div class="checkbox-dropdown-actions">
+                                    <button type="button" class="select-all" onclick="selectAll('redis-status-dropdown')">Select All</button>
+                                    <button type="button" class="clear-all" onclick="clearAll('redis-status-dropdown')">Clear</button>
+                                </div>
+                                <div class="checkbox-dropdown-items"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group" style="justify-content: flex-end; flex-direction: row; gap: 10px; align-items: flex-end;">
+                        <button class="btn btn-primary" onclick="loadRedisOrders()">
+                            Load Orders
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetRedisFilters()">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="redis-orders-stats" id="redis-orders-stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="redis-stat-total">-</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                    <div class="stat-card buy">
+                        <div class="stat-value" id="redis-stat-buy">-</div>
+                        <div class="stat-label">Buy Orders</div>
+                    </div>
+                    <div class="stat-card sell">
+                        <div class="stat-value" id="redis-stat-sell">-</div>
+                        <div class="stat-label">Sell Orders</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="redis-stat-complete">-</div>
+                        <div class="stat-label">Complete</div>
+                    </div>
+                    <div class="stat-card rejected">
+                        <div class="stat-value" id="redis-stat-rejected">-</div>
+                        <div class="stat-label">Rejected</div>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <div class="loading" id="redis-loading">
+                        <div class="spinner"></div>
+                        <p>Loading orders...</p>
+                    </div>
+                    
+                    <div id="redis-empty-state" class="empty-state">
+                        <h3>No Orders Loaded</h3>
+                        <p>Select broker and account, then click "Load Orders" to view data</p>
+                    </div>
+                    
+                    <div class="table-scroll" id="redis-table-container" style="display: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Side</th>
+                                    <th>Status</th>
+                                    <th>Order Qty</th>
+                                    <th>Filled Qty</th>
+                                    <th>Price</th>
+                                    <th>Remarks</th>
+                                    <th>Order Time</th>
+                                    <th>Exch Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="redis-orders-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Redis Orders Tab -->
+        
         <!-- Orders Tab -->
-        <div id="orders-tab" class="tab-content active">
+        <div id="orders-tab" class="tab-content">
         <div class="filters">
             <div class="filter-group">
                 <label>Broker</label>
@@ -941,6 +2409,121 @@
             </div>
         </div>
         <!-- End Config Editor Tab -->
+        
+        <!-- Heartbeat Tab -->
+        <div id="heartbeat-tab" class="tab-content">
+            <div class="heartbeat-container">
+                <div class="heartbeat-header">
+                    <div>
+                        <h3>🔍 Service Health Monitor</h3>
+                        <span class="heartbeat-timestamp" id="heartbeat-timestamp">Last checked: Never</span>
+                    </div>
+                    <div class="heartbeat-controls">
+                        <div class="heartbeat-auto-refresh">
+                            <input type="checkbox" id="auto-refresh" onchange="toggleAutoRefresh()">
+                            <label for="auto-refresh">Auto-refresh (10s)</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadHeartbeat()">🔄 Refresh</button>
+                    </div>
+                </div>
+                
+                <div class="heartbeat-overall" id="heartbeat-overall">
+                    <!-- Overall status will be populated here -->
+                </div>
+                
+                <div class="heartbeat-services" id="heartbeat-services">
+                    <div class="heartbeat-loading">
+                        <div class="spinner"></div>
+                        <p>Loading service status...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Heartbeat Tab -->
+        
+        <!-- Log Viewer Modal -->
+        <div id="log-viewer-modal" class="modal" style="display: none;">
+            <div class="modal-content log-modal">
+                <div class="modal-header">
+                    <h2 id="log-viewer-title">Service Logs</h2>
+                    <button class="modal-close" onclick="closeLogViewer()">✕</button>
+                </div>
+                <div class="modal-info">
+                    <span id="log-path" style="font-size: 0.85rem; color: var(--text-secondary);">Path: </span>
+                </div>
+                <div class="modal-body log-body">
+                    <pre id="log-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.5;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copy to Clipboard</button>
+                    <button class="btn btn-secondary" onclick="downloadLogs()">⬇️ Download</button>
+                    <button class="btn btn-primary" onclick="closeLogViewer()">Close</button>
+                </div>
+            </div>
+        </div>
+        <!-- End Log Viewer Modal -->
+        
+        <!-- Tickers Tab -->
+        <div id="tickers-tab" class="tab-content">
+            <div class="tickers-container">
+                <div class="tickers-header">
+                    <h3>📈 Live Tickers</h3>
+                    <div class="tickers-controls">
+                        <div class="tickers-auto-refresh">
+                            <input type="checkbox" id="tickers-auto-refresh" onchange="toggleTickersAutoRefresh()">
+                            <label for="tickers-auto-refresh">Auto-refresh (5s)</label>
+                        </div>
+                        <button class="btn btn-primary" onclick="loadTickers()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div class="tickers-content" id="tickers-content">
+                    <div class="tickers-loading">
+                        <div class="spinner"></div>
+                        <p>Loading tickers...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Tickers Tab -->
+        
+        <!-- Token Management Tab -->
+        <div id="token-management-tab" class="tab-content">
+            <div class="tokens-container">
+                <div class="tokens-header">
+                    <div>
+                        <h3>🔐 Token Management</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 5px;">Manage authentication tokens for connected brokers</p>
+                    </div>
+                    <div class="tokens-controls">
+                        <button class="btn btn-primary" onclick="loadTokens()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <div id="tokens-stats" class="tokens-stats" style="display: none;">
+                    <div class="tokens-stat-item">
+                        <span class="tokens-stat-label">Total Tokens</span>
+                        <span class="tokens-stat-value" id="tokens-total">0</span>
+                    </div>
+                    <div class="tokens-stat-item">
+                        <span class="tokens-stat-label">Valid</span>
+                        <span class="tokens-stat-value" id="tokens-valid" style="color: #4ade80;">0</span>
+                    </div>
+                    <div class="tokens-stat-item">
+                        <span class="tokens-stat-label">Invalid</span>
+                        <span class="tokens-stat-value" id="tokens-invalid" style="color: #ff6b6b;">0</span>
+                    </div>
+                </div>
+
+                <div id="token-management-content" class="tokens-content">
+                    <div class="tokens-loading">
+                        <div class="spinner"></div>
+                        <p>Loading tokens...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Token Management Tab -->
     </div>
     
     <script>
@@ -1010,7 +2593,12 @@
             const trigger = dropdown.querySelector('.checkbox-dropdown-trigger');
             const selectedText = trigger.querySelector('.selected-text');
             const values = getDropdownValues(dropdownId);
-            const defaultText = dropdownId === 'symbol-dropdown' ? 'All Stocks' : 'All Statuses';
+            
+            // Determine default text based on dropdown ID
+            let defaultText = 'All';
+            if (dropdownId.includes('symbol')) defaultText = 'All Stocks';
+            else if (dropdownId.includes('status')) defaultText = 'All Statuses';
+            else if (dropdownId.includes('exchange')) defaultText = 'All Exchanges';
             
             // Remove existing badge if any
             const existingBadge = trigger.querySelector('.badge-count');
@@ -1316,18 +2904,519 @@
         
         // ============ Tab Navigation ============
         function switchTab(tabName) {
-            // Update tab buttons
+            // Update tab buttons (use data-tab attribute for reliability)
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`.tab-btn[onclick="switchTab('${tabName}')"]`).classList.add('active');
-            
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+            if (btn && btn.classList) btn.classList.add('active');
+
             // Update tab content
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+            const tabEl = document.getElementById(`${tabName}-tab`);
+            if (tabEl && tabEl.classList) tabEl.classList.add('active');
+            
+            // Stop positions auto-refresh when leaving positions tab
+            if (tabName !== 'positions') {
+                stopPositionsAutoRefresh();
+                document.getElementById('positions-auto-refresh').checked = false;
+            }
             
             // Load config files when switching to config tab
             if (tabName === 'config') {
                 loadConfigFiles();
             }
+            
+            // Load heartbeat when switching to heartbeat tab
+            if (tabName === 'heartbeat') {
+                loadHeartbeat();
+            }
+            
+            // Load tickers when switching to tickers tab
+            if (tabName === 'tickers') {
+                loadTickers();
+            }
+            
+            // Load all positions when switching to positions tab
+            if (tabName === 'positions') {
+                loadAllPositions();
+            }
+            
+            // Load funds when switching to funds tab
+            if (tabName === 'funds') {
+                loadFunds();
+            }
+            
+            // Load redis orders when switching to redis-orders tab
+            if (tabName === 'redis-orders') {
+                initRedisOrdersTab();
+            }
+
+            // Load tokens when switching to token-management tab
+            if (tabName === 'token-management') {
+                loadTokens();
+            }
+            
+            // Stop redis orders auto-refresh when leaving redis-orders tab
+            if (tabName !== 'redis-orders') {
+                stopRedisOrdersAutoRefresh();
+                const checkbox = document.getElementById('redis-orders-auto-refresh');
+                if (checkbox) checkbox.checked = false;
+            }
+        }
+        
+        // ============ Positions Tab Functions ============
+        let positionsInterval = null;
+        
+        function togglePositionsAutoRefresh() {
+            const checkbox = document.getElementById('positions-auto-refresh');
+            if (checkbox.checked) {
+                startPositionsAutoRefresh();
+            } else {
+                stopPositionsAutoRefresh();
+            }
+        }
+        
+        function startPositionsAutoRefresh() {
+            if (positionsInterval) clearInterval(positionsInterval);
+            positionsInterval = setInterval(() => {
+                loadAllPositions();
+            }, 5000);
+        }
+        
+        function stopPositionsAutoRefresh() {
+            if (positionsInterval) {
+                clearInterval(positionsInterval);
+                positionsInterval = null;
+            }
+        }
+        
+        async function loadAllPositions() {
+            const container = document.getElementById('positions-content');
+            
+            // Show loading state
+            container.innerHTML = `
+                <div class="positions-loading">
+                    <div class="spinner"></div>
+                    <p>Loading positions for all accounts...</p>
+                </div>
+            `;
+            
+            try {
+                const data = await fetchJSON('api/positions/all');
+                
+                if (data.success && data.accounts && data.accounts.length > 0) {
+                    renderAllPositions(data.accounts);
+                } else if (data.success) {
+                    container.innerHTML = `
+                        <div class="positions-empty-state">
+                            <h3>No Accounts Found</h3>
+                            <p>No token files found in the tokens directory</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="positions-empty-state">
+                            <h3>Error</h3>
+                            <p style="color: #ff6b6b;">${data.error || 'Failed to load positions'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading positions:', error);
+                container.innerHTML = `
+                    <div class="positions-empty-state">
+                        <h3>Error Loading Positions</h3>
+                        <p style="color: #ff6b6b;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderAllPositions(accounts) {
+            const container = document.getElementById('positions-content');
+            
+            // Define columns to display
+            const columns = [
+                { key: 'symbol', label: 'Symbol' },
+                { key: 'exchange', label: 'Exchange' },
+                { key: 'product_type', label: 'Product' },
+                { key: 'buy_qty', label: 'Buy Qty' },
+                { key: 'sell_qty', label: 'Sell Qty' },
+                { key: 'net_qty', label: 'Net Qty' },
+                { key: 'buy_avg', label: 'Buy Avg' },
+                { key: 'sell_avg', label: 'Sell Avg' },
+                { key: 'ltp', label: 'LTP' },
+                { key: 'realized_pnl', label: 'Realized P&L' },
+                { key: 'unrealized_pnl', label: 'Unrealized P&L' },
+                { key: 'total_pnl', label: 'Total P&L' }
+            ];
+            
+            let html = '';
+            
+            accounts.forEach(acc => {
+                const tokenStatusClass = acc.token_status || 'unknown';
+                const tokenStatusText = acc.token_status ? acc.token_status.charAt(0).toUpperCase() + acc.token_status.slice(1) : 'Unknown';
+                
+                html += `
+                    <div class="positions-account-section">
+                        <div class="positions-account-header">
+                            <span class="positions-account-badge">${acc.broker.toUpperCase()}</span>
+                            <span class="positions-account-name">${acc.account}</span>
+                            <span class="positions-token-status ${tokenStatusClass}">${tokenStatusText}</span>
+                            <span class="positions-count">${acc.positions ? acc.positions.length : 0} positions</span>
+                        </div>
+                `;
+                
+                if (acc.error) {
+                    html += `
+                        <div class="positions-account-error">
+                            <p>⚠️ ${acc.error}</p>
+                        </div>
+                    `;
+                } else if (acc.positions && acc.positions.length > 0) {
+                    // Calculate cumulative PNL for this account
+                    let cumRealizedPnl = 0;
+                    let cumUnrealizedPnl = 0;
+                    let cumTotalPnl = 0;
+
+                    acc.positions.forEach(pos => {
+                        cumRealizedPnl += parseFloat(pos.realized_pnl) || 0;
+                        cumUnrealizedPnl += parseFloat(pos.unrealized_pnl) || 0;
+                        cumTotalPnl += parseFloat(pos.total_pnl) || 0;
+                    });
+
+                    html += `
+                        <div class="positions-table-container">
+                            <table class="positions-table">
+                                <thead>
+                                    <tr>
+                                        ${columns.map(col => `<th>${col.label}</th>`).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    acc.positions.forEach(pos => {
+                        html += '<tr>';
+                        columns.forEach(col => {
+                            let value = pos[col.key];
+                            let cellClass = '';
+                            
+                            if (value === undefined || value === null) {
+                                value = '-';
+                            }
+                            
+                            // Apply special formatting
+                            if (col.key === 'symbol') {
+                                cellClass = 'symbol-cell';
+                            } else if (col.key.includes('pnl')) {
+                                const numVal = parseFloat(value);
+                                if (!isNaN(numVal)) {
+                                    cellClass = numVal >= 0 ? 'pnl-positive' : 'pnl-negative';
+                                    value = (numVal >= 0 ? '+' : '') + numVal.toFixed(2);
+                                }
+                            } else if (col.key === 'buy_qty') {
+                                cellClass = 'qty-buy';
+                            } else if (col.key === 'sell_qty') {
+                                cellClass = 'qty-sell';
+                            } else if (col.key === 'net_qty') {
+                                const numVal = parseFloat(value);
+                                if (!isNaN(numVal)) {
+                                    cellClass = numVal > 0 ? 'qty-buy' : (numVal < 0 ? 'qty-sell' : '');
+                                }
+                            } else if (typeof value === 'number') {
+                                value = value.toFixed(2);
+                            }
+                            
+                            html += `<td class="${cellClass}">${escapeHtml(String(value))}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="positions-account-cumulative">
+                            <div class="positions-account-cumulative-item">
+                                <span class="positions-account-cumulative-label">Realized P&L</span>
+                                <span class="positions-account-cumulative-value ${cumRealizedPnl >= 0 ? 'positive' : 'negative'}">
+                                    ${cumRealizedPnl >= 0 ? '+' : ''}${cumRealizedPnl.toFixed(2)}
+                                </span>
+                            </div>
+                            <div class="positions-account-cumulative-item">
+                                <span class="positions-account-cumulative-label">Unrealized P&L</span>
+                                <span class="positions-account-cumulative-value ${cumUnrealizedPnl >= 0 ? 'positive' : 'negative'}">
+                                    ${cumUnrealizedPnl >= 0 ? '+' : ''}${cumUnrealizedPnl.toFixed(2)}
+                                </span>
+                            </div>
+                            <div class="positions-account-cumulative-item">
+                                <span class="positions-account-cumulative-label">Total P&L</span>
+                                <span class="positions-account-cumulative-value ${cumTotalPnl >= 0 ? 'positive' : 'negative'}">
+                                    ${cumTotalPnl >= 0 ? '+' : ''}${cumTotalPnl.toFixed(2)}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="positions-account-empty">
+                            <p>No open positions</p>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+            });
+            
+            // Build cumulative PnL summary table
+            const summaryHtml = buildPnlSummaryTable(accounts);
+            
+            container.innerHTML = summaryHtml + html;
+        }
+        
+        function buildPnlSummaryTable(accounts) {
+            // Aggregate PnL by account, exchange, product
+            const summary = {};
+            let grandTotal = { realized: 0, unrealized: 0, total: 0 };
+            
+            accounts.forEach(acc => {
+                if (!acc.positions || acc.positions.length === 0) return;
+                
+                acc.positions.forEach(pos => {
+                    const key = `${acc.broker}|${acc.account}|${pos.exchange}|${pos.product_type}`;
+                    
+                    if (!summary[key]) {
+                        summary[key] = {
+                            broker: acc.broker,
+                            account: acc.account,
+                            exchange: pos.exchange,
+                            product_type: pos.product_type,
+                            realized_pnl: 0,
+                            unrealized_pnl: 0,
+                            total_pnl: 0
+                        };
+                    }
+                    
+                    const realized = parseFloat(pos.realized_pnl) || 0;
+                    const unrealized = parseFloat(pos.unrealized_pnl) || 0;
+                    const total = parseFloat(pos.total_pnl) || 0;
+                    
+                    summary[key].realized_pnl += realized;
+                    summary[key].unrealized_pnl += unrealized;
+                    summary[key].total_pnl += total;
+                    
+                    grandTotal.realized += realized;
+                    grandTotal.unrealized += unrealized;
+                    grandTotal.total += total;
+                });
+            });
+            
+            const summaryRows = Object.values(summary);
+            
+            if (summaryRows.length === 0) {
+                return '';
+            }
+            
+            // Sort by account, exchange, product
+            summaryRows.sort((a, b) => {
+                if (a.broker !== b.broker) return a.broker.localeCompare(b.broker);
+                if (a.account !== b.account) return a.account.localeCompare(b.account);
+                if (a.exchange !== b.exchange) return a.exchange.localeCompare(b.exchange);
+                return a.product_type.localeCompare(b.product_type);
+            });
+            
+            // Create account color mapping
+            const accountColors = {};
+            let colorIndex = 0;
+            summaryRows.forEach(row => {
+                const accountKey = `${row.broker}|${row.account}`;
+                if (!(accountKey in accountColors)) {
+                    accountColors[accountKey] = colorIndex % 5;
+                    colorIndex++;
+                }
+            });
+            
+            let html = `
+                <div class="positions-summary-section">
+                    <div class="positions-summary-header">
+                        <h4>📊 Cumulative P&L Summary</h4>
+                    </div>
+                    <table class="positions-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Broker</th>
+                                <th>Account</th>
+                                <th>Exchange</th>
+                                <th>Product</th>
+                                <th>Realized P&L</th>
+                                <th>Unrealized P&L</th>
+                                <th>Total P&L</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            summaryRows.forEach(row => {
+                const realizedClass = row.realized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                const unrealizedClass = row.unrealized_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                const totalClass = row.total_pnl >= 0 ? 'pnl-positive' : 'pnl-negative';
+                const accountKey = `${row.broker}|${row.account}`;
+                const rowColorClass = `account-group-${accountColors[accountKey]}`;
+                const brokerClass = row.broker.toLowerCase();
+                
+                html += `
+                    <tr class="${rowColorClass}">
+                        <td><span class="broker-badge ${brokerClass}">${row.broker.toUpperCase()}</span></td>
+                        <td>${row.account}</td>
+                        <td>${row.exchange}</td>
+                        <td>${row.product_type}</td>
+                        <td class="${realizedClass}">${row.realized_pnl >= 0 ? '+' : ''}${row.realized_pnl.toFixed(2)}</td>
+                        <td class="${unrealizedClass}">${row.unrealized_pnl >= 0 ? '+' : ''}${row.unrealized_pnl.toFixed(2)}</td>
+                        <td class="${totalClass}">${row.total_pnl >= 0 ? '+' : ''}${row.total_pnl.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            // Grand total row
+            const gtRealizedClass = grandTotal.realized >= 0 ? 'pnl-positive' : 'pnl-negative';
+            const gtUnrealizedClass = grandTotal.unrealized >= 0 ? 'pnl-positive' : 'pnl-negative';
+            const gtTotalClass = grandTotal.total >= 0 ? 'pnl-positive' : 'pnl-negative';
+            
+            html += `
+                    <tr class="total-row">
+                        <td colspan="4"><strong>GRAND TOTAL</strong></td>
+                        <td class="${gtRealizedClass}"><strong>${grandTotal.realized >= 0 ? '+' : ''}${grandTotal.realized.toFixed(2)}</strong></td>
+                        <td class="${gtUnrealizedClass}"><strong>${grandTotal.unrealized >= 0 ? '+' : ''}${grandTotal.unrealized.toFixed(2)}</strong></td>
+                        <td class="${gtTotalClass}"><strong>${grandTotal.total >= 0 ? '+' : ''}${grandTotal.total.toFixed(2)}</strong></td>
+                    </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // ============ Funds Tab Functions ============
+        async function loadFunds() {
+            const container = document.getElementById('funds-content');
+            
+            // Show loading state
+            container.innerHTML = `
+                <div class="funds-loading">
+                    <div class="spinner"></div>
+                    <p>Loading funds data for all accounts...</p>
+                </div>
+            `;
+            
+            try {
+                const data = await fetchJSON('api/funds/all');
+                
+                if (data.success && data.accounts && data.accounts.length > 0) {
+                    renderFunds(data.accounts);
+                } else if (data.success) {
+                    container.innerHTML = `
+                        <div class="funds-empty-state">
+                            <h3>No Accounts Found</h3>
+                            <p>No token files found in the tokens directory</p>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div class="funds-empty-state">
+                            <h3>Error</h3>
+                            <p style="color: #ff6b6b;">${data.error || 'Failed to load funds'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading funds:', error);
+                container.innerHTML = `
+                    <div class="funds-empty-state">
+                        <h3>Error Loading Funds</h3>
+                        <p style="color: #ff6b6b;">${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderFunds(accounts) {
+            const container = document.getElementById('funds-content');
+            
+            const columns = [
+                { key: 'broker', label: 'Broker' },
+                { key: 'account', label: 'Account' },
+                { key: 'available_balance', label: 'Available Balance' },
+                { key: 'utilized_amount', label: 'Utilized Amount' },
+                { key: 'remaining_balance', label: 'Remaining Balance' },
+                { key: 'cash_used_percentage', label: 'Cash Used %' }
+            ];
+            
+            let html = `
+                <div class="funds-table-container">
+                    <table class="funds-table">
+                        <thead>
+                            <tr>
+                                ${columns.map(col => `<th>${col.label}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            accounts.forEach(acc => {
+                // Skip if there's an error and show error message instead
+                if (acc.error) {
+                    html += `
+                        <tr>
+                            <td colspan="${columns.length}">
+                                <div class="funds-account-error">
+                                    <span class="broker-cell">${acc.broker.toUpperCase()}</span> | 
+                                    <span class="account-cell">${acc.account}</span> - 
+                                    ⚠️ ${acc.error}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    const percentage = parseFloat(acc.cash_used_percentage) || 0;
+                    let percentageClass = 'usage-safe';
+                    if (percentage >= 90) {
+                        percentageClass = 'usage-critical';
+                    } else if (percentage >= 75) {
+                        percentageClass = 'usage-warning';
+                    }
+                    
+                    html += '<tr>';
+                    columns.forEach(col => {
+                        let value = acc[col.key];
+                        let cellClass = '';
+                        
+                        if (col.key === 'broker') {
+                            cellClass = 'broker-cell';
+                            value = acc.broker.toUpperCase();
+                        } else if (col.key === 'account') {
+                            cellClass = 'account-cell';
+                        } else if (col.key === 'cash_used_percentage') {
+                            cellClass = percentageClass;
+                            value = `${parseFloat(value).toFixed(2)}%`;
+                        } else if (typeof value === 'number') {
+                            cellClass = 'balance-neutral';
+                            value = value.toFixed(2);
+                        }
+                        
+                        html += `<td class="${cellClass}">${escapeHtml(String(value))}</td>`;
+                    });
+                    html += '</tr>';
+                }
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            container.innerHTML = html;
         }
         
         // ============ Config Editor Functions ============
@@ -1337,29 +3426,12 @@
         async function loadConfigFiles() {
             const container = document.getElementById('config-files');
             container.innerHTML = '<div class="config-empty-state"><div class="spinner"></div><p>Loading files...</p></div>';
-            
             try {
-                const response = await fetchJSON('api/config/files');
-                
-                if (!response.success) {
-                    container.innerHTML = `<div class="config-empty-state"><p>Error: ${response.error}</p></div>`;
-                    return;
-                }
-                
-                if (response.files.length === 0) {
-                    container.innerHTML = '<div class="config-empty-state"><p>No config files found</p></div>';
-                    return;
-                }
-                
-                container.innerHTML = response.files.map(file => `
-                    <div class="config-file-item ${currentConfigFile === file.name ? 'active' : ''}" 
-                         onclick="loadConfigFile('${file.name}')">
-                        <div class="filename">📄 ${file.name}</div>
-                        <div class="file-meta">${formatFileSize(file.size)}</div>
-                    </div>
-                `).join('');
+                const r = await fetchJSON('api/config/files');
+                if (!r.success) { container.innerHTML = `<div class="config-empty-state"><p>Error: ${r.error}</p></div>`; return; }
+                if (!r.files.length) { container.innerHTML = '<div class="config-empty-state"><p>No config files found</p></div>'; return; }
+                container.innerHTML = r.files.map(f => `<div class="config-file-item ${cfg.file === f.name ? 'active' : ''}" onclick="loadConfigFile('${f.name}')"><div class="filename">📄 ${f.name}</div><div class="file-meta">${formatFileSize(f.size)}</div></div>`).join('');
             } catch (error) {
-                console.error('Error loading config files:', error);
                 container.innerHTML = '<div class="config-empty-state"><p>Error loading files</p></div>';
             }
         }
@@ -1371,193 +3443,120 @@
         }
         
         async function loadConfigFile(filename) {
-            currentConfigFile = filename;
-            
-            // Update file list selection
-            document.querySelectorAll('.config-file-item').forEach(item => {
-                item.classList.toggle('active', item.querySelector('.filename').textContent.includes(filename));
-            });
-            
-            const form = document.getElementById('json-form');
-            const emptyState = document.getElementById('config-editor-empty');
-            const title = document.getElementById('config-editor-title');
-            const saveBtn = document.getElementById('save-btn');
-            const formatBtn = document.getElementById('format-btn');
-            
+            cfg.file = filename;
+            document.querySelectorAll('.config-file-item').forEach(i => i.classList.toggle('active', i.textContent.includes(filename)));
+            const [form, empty, title, saveBtn] = ['json-form', 'config-editor-empty', 'config-editor-title', 'save-btn'].map(id => document.getElementById(id));
             try {
-                const response = await fetchJSON(`api/config/file/${filename}`);
-                
-                if (!response.success) {
-                    showConfigStatus('Error: ' + response.error, 'error');
-                    return;
-                }
-                
+                const r = await fetchJSON(`api/config/file/${filename}`);
+                if (!r.success) { showConfigStatus('Error: ' + r.error, 'error'); return; }
                 title.textContent = filename;
-                currentConfigData = response.content;
-                
-                // Render the form fields
-                renderConfigForm(currentConfigData);
-                
-                emptyState.style.display = 'none';
+                cfg.data = r.content;
+                renderConfigForm(cfg.data);
+                empty.style.display = 'none';
                 form.style.display = 'flex';
                 saveBtn.disabled = false;
-                formatBtn.style.display = 'none'; // Hide format button since we're using form
-                
                 hideConfigStatus();
             } catch (error) {
-                console.error('Error loading config file:', error);
                 showConfigStatus('Error loading file: ' + error.message, 'error');
+            }
+        }
+        
+        async function saveConfig() {
+            if (!cfg.file || !cfg.data) return;
+            try {
+                const r = await fetch(`api/config/file/${cfg.file}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: cfg.data })
+                });
+                const res = await r.json();
+                if (res.success) { showConfigStatus('File saved successfully!', 'success'); loadConfigFiles(); }
+                else showConfigStatus('Error: ' + res.error, 'error');
+            } catch (error) {
+                showConfigStatus('Error saving file: ' + error.message, 'error');
             }
         }
         
         function renderConfigForm(data) {
             const form = document.getElementById('json-form');
             form.innerHTML = '';
-            
-            // Group fields by type
-            const simpleFields = [];
-            const nestedFields = [];
-            const arrayFields = [];
-            
+            const groups = { simple: [], nested: [], array: [] };
             for (const [key, value] of Object.entries(data)) {
-                if (Array.isArray(value)) {
-                    arrayFields.push([key, value]);
-                } else if (typeof value === 'object' && value !== null) {
-                    nestedFields.push([key, value]);
-                } else {
-                    simpleFields.push([key, value]);
-                }
+                if (Array.isArray(value)) groups.array.push([key, value]);
+                else if (typeof value === 'object' && value !== null) groups.nested.push([key, value]);
+                else groups.simple.push([key, value]);
             }
-            
-            // Render simple fields first
-            if (simpleFields.length > 0) {
-                const group = document.createElement('div');
-                group.className = 'json-field-group';
-                group.innerHTML = '<div class="json-field-group-title">General Settings</div>';
-                
-                simpleFields.forEach(([key, value]) => {
-                    group.appendChild(createSimpleField(key, value));
+            if (groups.simple.length) {
+                const fields = groups.simple.map(([k, v]) => {
+                    const f = document.createElement('div');
+                    f.className = 'json-field';
+                    f.innerHTML = `<label class="json-field-label">${formatLabel(k)}</label>${createInput(k, v)}`;
+                    return f;
                 });
-                
-                form.appendChild(group);
+                form.appendChild(createFieldGroup('General', fields));
             }
-            
-            // Render nested object fields
-            nestedFields.forEach(([key, value]) => {
-                const group = document.createElement('div');
-                group.className = 'json-field-group';
-                group.innerHTML = `<div class="json-field-group-title">${formatLabel(key)}</div>`;
-                
-                const nestedContainer = document.createElement('div');
-                nestedContainer.className = 'json-nested-fields';
-                
-                for (const [subKey, subValue] of Object.entries(value)) {
-                    const field = document.createElement('div');
-                    field.className = 'json-nested-field';
-                    field.innerHTML = `
-                        <label>${formatLabel(subKey)}</label>
-                        ${createNestedInputHtml(key, subKey, subValue)}
-                    `;
-                    nestedContainer.appendChild(field);
-                }
-                
-                group.appendChild(nestedContainer);
-                form.appendChild(group);
+            groups.nested.forEach(([key, value]) => {
+                const entries = Object.entries(value);
+                const fields = entries.map(([sk, sv]) => {
+                    const f = document.createElement('div');
+                    f.className = 'json-nested-field';
+                    f.innerHTML = `<label>${formatLabel(sk)}</label>${createInput(`${key}.${sk}`, sv, 'updateConfigValue', true)}`;
+                    return f;
+                });
+                const c = document.createElement('div');
+                c.className = 'json-nested-fields';
+                fields.forEach(f => c.appendChild(f));
+                const g = document.createElement('div');
+                g.className = 'json-field-group';
+                g.innerHTML = `<div class="json-field-group-title">${formatLabel(key)} (${entries.length})</div>`;
+                g.appendChild(c);
+                form.appendChild(g);
             });
-            
-            // Render array fields
-            arrayFields.forEach(([key, value]) => {
-                const group = document.createElement('div');
-                group.className = 'json-field-group';
-                group.innerHTML = `<div class="json-field-group-title">${formatLabel(key)}</div>`;
-                
-                const arrayContainer = document.createElement('div');
-                arrayContainer.className = 'json-array-field';
-                arrayContainer.id = `array-${key}`;
-                
-                value.forEach((item, index) => {
-                    arrayContainer.appendChild(createArrayItem(key, index, item));
+            groups.array.forEach(([key, value]) => {
+                const c = document.createElement('div');
+                c.className = 'json-array-field';
+                value.forEach((item, i) => {
+                    const ie = document.createElement('div');
+                    ie.className = 'json-array-item';
+                    ie.innerHTML = `<input type="text" class="json-field-input" data-key="${key}" data-index="${i}" value="${escapeHtml(String(item))}" onchange="updateArrayValue(this)"><button onclick="removeArrayItem('${key}', ${i})">×</button>`;
+                    c.appendChild(ie);
                 });
-                
-                const addBtn = document.createElement('div');
-                addBtn.className = 'json-array-add';
-                addBtn.textContent = '+ Add Item';
-                addBtn.onclick = () => addArrayItem(key);
-                arrayContainer.appendChild(addBtn);
-                
-                group.appendChild(arrayContainer);
-                form.appendChild(group);
+                const ab = document.createElement('div');
+                ab.className = 'json-array-add';
+                ab.textContent = '+ Add';
+                ab.onclick = () => { cfg.data[key].push(''); renderConfigForm(cfg.data); };
+                c.appendChild(ab);
+                const g = document.createElement('div');
+                g.className = 'json-field-group';
+                g.innerHTML = `<div class="json-field-group-title">${formatLabel(key)} (${value.length})</div>`;
+                g.appendChild(c);
+                form.appendChild(g);
             });
         }
         
-        // Special fields that need 0.1 step
-        const decimalStepFields = ['margin', 'multiplier', 'step', 'target'];
+        // Config editor helpers
+        const cfg = { file: null, data: null, decimalStepFields: ['margin', 'multiplier', 'step', 'target'] };
         
-        function createNestedInputHtml(parentKey, subKey, value) {
-            const dataKey = `data-key="${parentKey}.${subKey}"`;
-            
-            // Action fields: checkbox where 1 = checked, 0 = unchecked
-            if (parentKey === 'action') {
-                const checked = value === 1 ? 'checked' : '';
-                return `<input type="checkbox" class="json-field-input boolean" ${dataKey} ${checked} onchange="updateActionValue(this)">`;
-            }
-            
-            // Decimal step fields (margin, multiplier, step, target)
-            if (decimalStepFields.includes(parentKey)) {
-                return `<input type="number" step="0.1" class="json-field-input number" ${dataKey} value="${value}" onchange="updateConfigValue(this)">`;
-            }
-            
-            // Default number handling
-            if (typeof value === 'number') {
-                return `<input type="number" step="any" class="json-field-input number" ${dataKey} value="${value}" onchange="updateConfigValue(this)">`;
-            }
-            
-            return `<input type="text" class="json-field-input" ${dataKey} value="${escapeHtml(String(value))}" onchange="updateConfigValue(this)">`;
+        function createFieldGroup(title, elements) {
+            const g = document.createElement('div');
+            g.className = 'json-field-group';
+            g.innerHTML = `<div class="json-field-group-title">${title}</div>`;
+            elements.forEach(e => g.appendChild(e));
+            return g;
         }
         
-        function createSimpleField(key, value) {
-            const field = document.createElement('div');
-            field.className = 'json-field';
-            field.innerHTML = `
-                <label class="json-field-label">${formatLabel(key)}</label>
-                ${createInputHtml(key, value)}
-            `;
-            return field;
-        }
-        
-        function createInputHtml(key, value) {
-            const type = typeof value;
-            const dataKey = `data-key="${key}"`;
-            
-            // Order type: dropdown with I and C options
-            if (key === 'order_type') {
-                return `
-                    <select class="json-field-input" ${dataKey} onchange="updateConfigValue(this)">
-                        <option value="I" ${value === 'I' ? 'selected' : ''}>I (Intraday)</option>
-                        <option value="C" ${value === 'C' ? 'selected' : ''}>C (CNC)</option>
-                    </select>
-                `;
+        function createInput(key, value, onChange = 'updateConfigValue', nested = false) {
+            const attrs = nested ? `data-key="${key}"` : `data-key="${key}"`;
+            if (key.includes('.')) {
+                const [parent, child] = key.split('.');
+                if (parent === 'action') return `<input type="checkbox" class="json-field-input boolean" data-key="${key}" ${value === 1 ? 'checked' : ''} onchange="updateActionValue(this)">`;
+                if (cfg.decimalStepFields.includes(parent)) return `<input type="number" step="0.1" class="json-field-input number" ${attrs} value="${value}" onchange="${onChange}(this)">`;
             }
-            
-            if (type === 'boolean') {
-                return `<input type="checkbox" class="json-field-input boolean" ${dataKey} ${value ? 'checked' : ''} onchange="updateConfigValue(this)">`;
-            } else if (type === 'number') {
-                return `<input type="number" step="any" class="json-field-input number" ${dataKey} value="${value}" onchange="updateConfigValue(this)">`;
-            } else {
-                return `<input type="text" class="json-field-input" ${dataKey} value="${escapeHtml(String(value))}" onchange="updateConfigValue(this)">`;
-            }
+            if (key === 'order_type') return `<select class="json-field-input" ${attrs} onchange="${onChange}(this)"><option ${value === 'I' ? 'selected' : ''}>I (Intraday)</option><option ${value === 'C' ? 'selected' : ''}>C (CNC)</option></select>`;
+            if (typeof value === 'boolean') return `<input type="checkbox" class="json-field-input boolean" ${attrs} ${value ? 'checked' : ''} onchange="${onChange}(this)">`;
+            if (typeof value === 'number') return `<input type="number" step="any" class="json-field-input number" ${attrs} value="${value}" onchange="${onChange}(this)">`;
+            return `<input type="text" class="json-field-input" ${attrs} value="${escapeHtml(String(value))}" onchange="${onChange}(this)">`;
         }
-        
-        function createArrayItem(key, index, value) {
-            const item = document.createElement('div');
-            item.className = 'json-array-item';
-            item.innerHTML = `
-                <input type="text" class="json-field-input" data-key="${key}" data-index="${index}" value="${escapeHtml(String(value))}" onchange="updateArrayValue(this)">
-                <button type="button" onclick="removeArrayItem('${key}', ${index})">×</button>
-            `;
-            return item;
-        }
-        
         function formatLabel(key) {
             return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
@@ -1566,51 +3565,26 @@
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
         
+        function formatLabel(str) {
+            return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+        
         function updateConfigValue(input) {
-            const key = input.dataset.key;
-            const keys = key.split('.');
-            let value;
-            
-            if (input.type === 'checkbox') {
-                value = input.checked;
-            } else if (input.type === 'number') {
-                value = parseFloat(input.value);
-            } else if (input.tagName === 'SELECT') {
-                value = input.value;
-            } else {
-                value = input.value;
-            }
-            
-            // Navigate to the right property
-            if (keys.length === 1) {
-                currentConfigData[keys[0]] = value;
-            } else {
-                currentConfigData[keys[0]][keys[1]] = value;
-            }
+            const keys = input.dataset.key.split('.');
+            let value = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? parseFloat(input.value) : input.value);
+            if (keys.length === 1) cfg.data[keys[0]] = value;
+            else cfg.data[keys[0]][keys[1]] = value;
         }
-        
         function updateActionValue(input) {
-            const key = input.dataset.key;
-            const keys = key.split('.');
-            // Action: checked = 1, unchecked = 0
-            const value = input.checked ? 1 : 0;
-            currentConfigData[keys[0]][keys[1]] = value;
+            const [p, c] = input.dataset.key.split('.');
+            cfg.data[p][c] = input.checked ? 1 : 0;
         }
-        
         function updateArrayValue(input) {
-            const key = input.dataset.key;
-            const index = parseInt(input.dataset.index);
-            currentConfigData[key][index] = input.value;
+            cfg.data[input.dataset.key][parseInt(input.dataset.index)] = input.value;
         }
-        
-        function addArrayItem(key) {
-            currentConfigData[key].push('');
-            renderConfigForm(currentConfigData);
-        }
-        
         function removeArrayItem(key, index) {
-            currentConfigData[key].splice(index, 1);
-            renderConfigForm(currentConfigData);
+            cfg.data[key].splice(index, 1);
+            renderConfigForm(cfg.data);
         }
         
         async function saveConfig() {
@@ -1655,6 +3629,1095 @@
             status.className = 'config-status';
             status.style.display = 'none';
         }
+        
+        // ============ Heartbeat Functions ============
+        let heartbeatInterval = null;
+        
+        async function loadHeartbeat() {
+            const container = document.getElementById('heartbeat-services');
+            const timestamp = document.getElementById('heartbeat-timestamp');
+            
+            try {
+                const data = await fetchJSON('api/heartbeat');
+                
+                // Update timestamp
+                const time = new Date(data.timestamp);
+                timestamp.textContent = `Last checked: ${time.toLocaleString()}`;
+                
+                // Render service cards
+                container.innerHTML = '';
+                
+                for (const [serviceName, serviceData] of Object.entries(data.services)) {
+                    const card = createServiceCard(serviceName, serviceData);
+                    container.appendChild(card);
+                }
+                
+                // Load and display token validity section
+                try {
+                    const tokenData = await fetchJSON('api/token-validity');
+                    const tokenSection = createTokenValiditySection(tokenData);
+                    container.appendChild(tokenSection);
+                } catch (tokenError) {
+                    console.warn('Could not load token validity:', tokenError);
+                }
+                
+            } catch (error) {
+                console.error('Error loading heartbeat:', error);
+                container.innerHTML = `
+                    <div class="heartbeat-loading">
+                        <p style="color: #ff6b6b;">Error loading service status: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function createTokenValiditySection(data) {
+            const section = document.createElement('div');
+            
+            // Determine overall health status based on all tokens
+            let isHealthy = true;
+            if (data.success && data.tokens && data.tokens.length > 0) {
+                isHealthy = data.tokens.every(token => (token.status || '').toLowerCase() === 'valid');
+            } else {
+                isHealthy = false;
+            }
+            
+            section.className = 'token-validity-section ' + (isHealthy ? 'healthy' : 'unhealthy');
+            
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'token-validity-header';
+            
+            const titleContainer = document.createElement('div');
+            titleContainer.className = 'service-name';
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'service-icon';
+            iconSpan.textContent = '🔑';
+            titleContainer.appendChild(iconSpan);
+            
+            const titleText = document.createElement('span');
+            titleText.textContent = 'Token Validity';
+            titleContainer.appendChild(titleText);
+            
+            header.appendChild(titleContainer);
+            
+            // Add status badge
+            const statusBadge = document.createElement('span');
+            statusBadge.className = 'service-status-badge ' + (isHealthy ? 'healthy' : 'unhealthy');
+            statusBadge.textContent = isHealthy ? '✓ Healthy' : '✗ Unhealthy';
+            header.appendChild(statusBadge);
+            
+            section.appendChild(header);
+            
+            // Create body
+            const body = document.createElement('div');
+            body.className = 'service-card-body';
+            
+            if (data.success && data.tokens && data.tokens.length > 0) {
+                // Create details for each token
+                data.tokens.forEach(token => {
+                    const detailDiv = document.createElement('div');
+                    detailDiv.className = 'service-detail';
+                    
+                    const labelSpan = document.createElement('span');
+                    labelSpan.className = 'service-detail-label';
+                    labelSpan.textContent = token.broker.toUpperCase() + ' - ' + token.account;
+                    detailDiv.appendChild(labelSpan);
+                    
+                    const valueSpan = document.createElement('span');
+                    valueSpan.className = 'service-detail-value';
+                    const statusLower = (token.status || '').toLowerCase();
+                    if (statusLower === 'valid') {
+                        valueSpan.style.color = '#00ff88';
+                    } else {
+                        valueSpan.style.color = '#ff6b6b';
+                    }
+                    valueSpan.textContent = token.status;
+                    detailDiv.appendChild(valueSpan);
+                    
+                    body.appendChild(detailDiv);
+                });
+                
+                // Add summary message
+                const validCount = data.tokens.filter(t => (t.status || '').toLowerCase() === 'valid').length;
+                const totalCount = data.tokens.length;
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'service-message' + (validCount < totalCount ? ' error' : '');
+                messageDiv.textContent = validCount + ' of ' + totalCount + ' tokens valid';
+                body.appendChild(messageDiv);
+            } else {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'service-message error';
+                messageDiv.textContent = 'No tokens found in ' + (data.token_path || 'token directory');
+                body.appendChild(messageDiv);
+            }
+            
+            section.appendChild(body);
+            return section;
+        }
+
+        // Token Management functions
+        async function loadTokens() {
+            const container = document.getElementById('token-management-content');
+            const statsDiv = document.getElementById('tokens-stats');
+            try {
+                const data = await fetchJSON('api/tokens');
+                container.innerHTML = '';
+
+                if (data.success && data.tokens && data.tokens.length > 0) {
+                    // Update stats
+                    const total = data.tokens.length;
+                    const valid = data.tokens.filter(t => (t.status || '').toLowerCase() === 'valid').length;
+                    const invalid = total - valid;
+                    
+                    document.getElementById('tokens-total').textContent = total;
+                    document.getElementById('tokens-valid').textContent = valid;
+                    document.getElementById('tokens-invalid').textContent = invalid;
+                    statsDiv.style.display = 'grid';
+
+                    // Create table
+                    const tableDiv = document.createElement('div');
+                    tableDiv.className = 'tokens-table-container';
+                    
+                    const table = document.createElement('table');
+                    table.className = 'tokens-table';
+                    
+                    // Header
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    ['Broker', 'Account', 'Token', 'Status', 'Actions'].forEach(label => {
+                        const th = document.createElement('th');
+                        th.textContent = label;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+                    
+                    // Body
+                    const tbody = document.createElement('tbody');
+                    data.tokens.forEach(tok => {
+                        const row = document.createElement('tr');
+                        
+                        // Broker cell
+                        const brokerCell = document.createElement('td');
+                        brokerCell.innerHTML = `<span class="token-broker">${escapeHtml(tok.broker.toUpperCase())}</span>`;
+                        row.appendChild(brokerCell);
+                        
+                        // Account cell
+                        const accountCell = document.createElement('td');
+                        accountCell.innerHTML = `<span class="token-account">${escapeHtml(tok.account)}</span>`;
+                        row.appendChild(accountCell);
+                        
+                        // Token input cell
+                        const tokenCell = document.createElement('td');
+                        tokenCell.className = 'token-input-cell';
+                        const tokenValue = (tok.token || '').trim();
+                        const tokenDisplay = tokenValue ? '●'.repeat(Math.min(tokenValue.length, 20)) : '(empty)';
+                        
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'token-input-wrapper';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'password';
+                        input.className = 'token-input-field';
+                        input.value = tokenValue;
+                        input.placeholder = 'Paste token here...';
+                        input.dataset.broker = tok.broker;
+                        input.dataset.account = tok.account;
+                        input.dataset.original = tokenValue;
+                        
+                        const revealBtn = document.createElement('button');
+                        revealBtn.className = 'token-reveal-btn';
+                        revealBtn.title = 'Toggle visibility';
+                        revealBtn.textContent = '👁️';
+                        revealBtn.onclick = (e) => {
+                            e.preventDefault();
+                            input.type = input.type === 'password' ? 'text' : 'password';
+                            revealBtn.textContent = input.type === 'password' ? '👁️' : '🙈';
+                        };
+                        
+                        wrapper.appendChild(input);
+                        wrapper.appendChild(revealBtn);
+                        tokenCell.appendChild(wrapper);
+                        row.appendChild(tokenCell);
+                        
+                        // Status cell
+                        const statusCell = document.createElement('td');
+                        statusCell.className = 'token-status-cell';
+                        const statusSpan = document.createElement('span');
+                        const initStatus = (tok.status || '').toString().toLowerCase();
+                        const statusClass = initStatus === 'valid' ? 'valid' : (initStatus === 'invalid' ? 'invalid' : 'error');
+                        statusSpan.className = 'token-status-indicator ' + statusClass;
+                        statusSpan.dataset.rowId = `${tok.broker}-${tok.account}`;
+                        
+                        const dot = document.createElement('span');
+                        dot.className = 'token-status-dot';
+                        statusSpan.appendChild(dot);
+                        
+                        const statusText = document.createElement('span');
+                        statusText.textContent = (tok.status || 'Unknown').substring(0, 15);
+                        statusSpan.appendChild(statusText);
+                        
+                        statusCell.appendChild(statusSpan);
+                        row.appendChild(statusCell);
+                        
+                        // Actions cell
+                        const actionsCell = document.createElement('td');
+                        actionsCell.className = 'token-actions';
+                        
+                        const checkBtn = document.createElement('button');
+                        checkBtn.className = 'token-action-btn token-check-btn';
+                        checkBtn.textContent = 'Check';
+                        checkBtn.onclick = async () => {
+                            checkBtn.disabled = true;
+                            const status = statusSpan;
+                            status.className = 'token-status-indicator checking';
+                            status.innerHTML = '<span class="token-status-dot checking"></span><span>Checking...</span>';
+                            try {
+                                const result = await checkTokenStatus(tok.broker, tok.account, input.value.trim());
+                                const resultClass = result === 'Valid' ? 'valid' : (result === 'Invalid' ? 'invalid' : 'error');
+                                status.className = 'token-status-indicator ' + resultClass;
+                                const dot = document.createElement('span');
+                                dot.className = 'token-status-dot';
+                                status.innerHTML = '';
+                                status.appendChild(dot);
+                                const txt = document.createElement('span');
+                                txt.textContent = result.substring(0, 15);
+                                status.appendChild(txt);
+                            } catch (err) {
+                                console.error('Error checking token', err);
+                                status.className = 'token-status-indicator error';
+                                status.innerHTML = '<span class="token-status-dot"></span><span>Error</span>';
+                            } finally {
+                                checkBtn.disabled = false;
+                            }
+                        };
+                        actionsCell.appendChild(checkBtn);
+                        
+                        const saveBtn = document.createElement('button');
+                        saveBtn.className = 'token-action-btn token-save-btn';
+                        saveBtn.textContent = 'Save';
+                        saveBtn.onclick = async () => {
+                            saveBtn.disabled = true;
+                            const val = input.value.trim();
+                            const origText = saveBtn.textContent;
+                            try {
+                                await saveToken(tok.broker, tok.account, val);
+                                saveBtn.textContent = '✓ Saved';
+                                input.dataset.original = val;
+                                setTimeout(() => saveBtn.textContent = origText, 1500);
+                                
+                                // Auto-check after save
+                                const status = statusSpan;
+                                status.className = 'token-status-indicator checking';
+                                status.innerHTML = '<span class="token-status-dot checking"></span><span>Checking...</span>';
+                                const result = await checkTokenStatus(tok.broker, tok.account, val);
+                                const resultClass = result === 'Valid' ? 'valid' : (result === 'Invalid' ? 'invalid' : 'error');
+                                status.className = 'token-status-indicator ' + resultClass;
+                                const dot = document.createElement('span');
+                                dot.className = 'token-status-dot';
+                                status.innerHTML = '';
+                                status.appendChild(dot);
+                                const txt = document.createElement('span');
+                                txt.textContent = result.substring(0, 15);
+                                status.appendChild(txt);
+                            } catch (err) {
+                                console.error('Error saving token', err);
+                                saveBtn.textContent = '✗ Error';
+                                setTimeout(() => saveBtn.textContent = origText, 1500);
+                            } finally {
+                                saveBtn.disabled = false;
+                            }
+                        };
+                        actionsCell.appendChild(saveBtn);
+                        row.appendChild(actionsCell);
+                        
+                        tbody.appendChild(row);
+                    });
+                    
+                    table.appendChild(tbody);
+                    tableDiv.appendChild(table);
+                    container.appendChild(tableDiv);
+                    
+                    // Auto-check unknown statuses
+                    data.tokens.forEach(async (tok) => {
+                        const statusEl = document.querySelector(`[data-rowId="${tok.broker}-${tok.account}"]`);
+                        if (statusEl && ((tok.status || '').toLowerCase() === 'unknown' || !tok.status)) {
+                            try {
+                                const row = statusEl.closest('tr');
+                                const input = row.querySelector('.token-input-field');
+                                const result = await checkTokenStatus(tok.broker, tok.account, input.value.trim());
+                                const resultClass = result === 'Valid' ? 'valid' : (result === 'Invalid' ? 'invalid' : 'error');
+                                statusEl.className = 'token-status-indicator ' + resultClass;
+                                const dot = document.createElement('span');
+                                dot.className = 'token-status-dot';
+                                statusEl.innerHTML = '';
+                                statusEl.appendChild(dot);
+                                const txt = document.createElement('span');
+                                txt.textContent = result.substring(0, 15);
+                                statusEl.appendChild(txt);
+                            } catch (err) {
+                                console.error('Error auto-checking token', err);
+                            }
+                        }
+                    });
+                } else {
+                    statsDiv.style.display = 'none';
+                    container.innerHTML = '<div class="tokens-empty-state"><h3>No Tokens Found</h3><p>Token files will appear here once created in the tokens directory</p></div>';
+                }
+
+            } catch (error) {
+                console.error('Error loading tokens:', error);
+                statsDiv.style.display = 'none';
+                container.innerHTML = `<div class="tokens-empty-state"><h3>Error Loading Tokens</h3><p style="color:#ff6b6b;">${escapeHtml(error.message)}</p></div>`;
+            }
+        }
+
+        async function checkTokenStatus(broker, account, tokenValue) {
+            try {
+                const payload = { broker, account, token: tokenValue };
+                const res = await fetch('api/tokens/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                return (data && data.valid) ? 'Valid' : 'Invalid';
+            } catch (err) {
+                console.error('Error checking token', err);
+                return 'Error';
+            }
+        }
+
+        async function saveToken(broker, account, tokenValue) {
+            const payload = { broker, account, token: tokenValue };
+            const res = await fetch('api/tokens/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || 'Save failed');
+            return data;
+        }
+        
+
+        function createServiceCard(name, data) {
+            const card = document.createElement('div');
+            card.className = `service-card ${data.status}`;
+            
+            const icon = getServiceIcon(name);
+            const displayName = formatServiceName(name);
+            
+            let detailsHtml = '';
+            
+            // Build details based on service type
+            if (name === 'postgres') {
+                detailsHtml = `
+                    <div class="service-detail">
+                        <span class="service-detail-label">Host</span>
+                        <span class="service-detail-value">${data.host}:${data.port}</span>
+                    </div>
+                    <div class="service-detail">
+                        <span class="service-detail-label">Database</span>
+                        <span class="service-detail-value">${data.database}</span>
+                    </div>
+                `;
+            } else if (name === 'redis') {
+                detailsHtml = `
+                    <div class="service-detail">
+                        <span class="service-detail-label">Host</span>
+                        <span class="service-detail-value">${data.host}:${data.port}</span>
+                    </div>
+                `;
+                if (data.version) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Version</span>
+                            <span class="service-detail-value">${data.version}</span>
+                        </div>
+                    `;
+                }
+                if (data.connected_clients !== undefined) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Connected Clients</span>
+                            <span class="service-detail-value">${data.connected_clients}</span>
+                        </div>
+                    `;
+                }
+                if (data.used_memory_human) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Memory Usage</span>
+                            <span class="service-detail-value">${data.used_memory_human}</span>
+                        </div>
+                    `;
+                }
+            } else if (name === 'dataapi') {
+                if (data.engine_status) {
+                    detailsHtml = `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Engine Status</span>
+                            <span class="service-detail-value" style="color: ${data.engine_status === 'active' ? '#00ff88' : '#ff9f43'}">${data.engine_status.toUpperCase()}</span>
+                        </div>
+                    `;
+                } else {
+                    detailsHtml = `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Redis Key</span>
+                            <span class="service-detail-value">heartbeat:TickEngine</span>
+                        </div>
+                    `;
+                }
+                if (data.last_heartbeat) {
+                    const heartbeatTime = new Date(data.last_heartbeat);
+                    const formattedTime = heartbeatTime.toLocaleString();
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Last Heartbeat</span>
+                            <span class="service-detail-value">${formattedTime}</span>
+                        </div>
+                    `;
+                }
+                if (data.tick_count !== undefined) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Tick Count</span>
+                            <span class="service-detail-value">${data.tick_count}</span>
+                        </div>
+                    `;
+                }
+                if (data.error_count !== undefined) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Error Count</span>
+                            <span class="service-detail-value" style="color: ${parseInt(data.error_count) > 0 ? '#ff6b6b' : '#00ff88'}">${data.error_count}</span>
+                        </div>
+                    `;
+                }
+            } else if (name === 'orderprocessor' || name === 'executionengine') {
+                // OrderProcessor and ExecutionEngine services
+                if (data.last_heartbeat) {
+                    const heartbeatTime = new Date(data.last_heartbeat);
+                    const formattedTime = heartbeatTime.toLocaleString();
+                        
+
+                    detailsHtml = `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Last Heartbeat</span>
+                            <span class="service-detail-value">${formattedTime}</span>
+                        </div>
+                    `;
+                }
+                if (data.age_seconds !== undefined) {
+                    let ageColor = '#00ff88'; // green
+                    if (data.age_seconds > 30) {
+                        ageColor = '#ff6b6b'; // red
+                    } else if (data.age_seconds > 10) {
+                        ageColor = '#ffc107'; // yellow
+                    }
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Heartbeat Age</span>
+                            <span class="service-detail-value" style="color: ${ageColor}">${data.age_seconds}s</span>
+                        </div>
+                    `;
+                }
+                if (data.key) {
+                    detailsHtml += `
+                        <div class="service-detail">
+                            <span class="service-detail-label">Redis Key</span>
+                            <span class="service-detail-value">${data.key}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            const messageClass = data.status === 'unhealthy' ? 'error' : (data.status === 'warning' ? 'warning' : '');
+            
+            let statusBadgeText = '✓ Healthy';
+            if (data.status === 'unhealthy') {
+                statusBadgeText = '✗ Unhealthy';
+            } else if (data.status === 'warning') {
+                statusBadgeText = '⚠ Warning';
+            }
+            
+            // Add action buttons for manageable services
+            let actionsHtml = '';
+            if (['dataapi', 'orderprocessor', 'executionengine'].includes(name)) {
+                actionsHtml = `
+                    <div class="service-actions">
+                        <button class="service-action-btn start-btn" title="Start service" onclick="startService('${name}')">▶️ Start</button>
+                        <button class="service-action-btn stop-btn" title="Stop service" onclick="stopService('${name}')">⏹️ Stop</button>
+                        <button class="service-action-btn logs-btn" title="View logs" onclick="viewServiceLogs('${name}')">📋 Logs</button>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = `
+                <div class="service-card-header">
+                    <div class="service-name">
+                        <span class="service-icon">${icon}</span>
+                        <span>${displayName}</span>
+                    </div>
+                    <span class="service-status-badge ${data.status}">
+                        ${statusBadgeText}
+                    </span>
+                </div>
+                <div class="service-card-body">
+                    ${detailsHtml}
+                    <div class="service-message ${messageClass}">
+                        ${data.message}
+                    </div>
+                </div>
+                ${actionsHtml}
+            `;
+            
+            return card;
+        }
+        
+        function getServiceIcon(name) {
+            const icons = {
+                'postgres': '🐘',
+                'redis': '🔴',
+                'dataapi': '📡',
+                'orderprocessor': '📋',
+                'executionengine': '⚙️'
+            };
+            return icons[name] || '📦';
+        }
+        
+        function formatServiceName(name) {
+            const names = {
+                'postgres': 'PostgreSQL',
+                'redis': 'Redis',
+                'dataapi': 'DataAPI (TickEngine)',
+                'orderprocessor': 'Order Processor',
+                'executionengine': 'Execution Engine'
+            };
+            return names[name] || name.charAt(0).toUpperCase() + name.slice(1);
+        }
+        
+        function toggleAutoRefresh() {
+            const checkbox = document.getElementById('auto-refresh');
+            
+            if (checkbox.checked) {
+                // Start auto-refresh every 10 seconds
+                heartbeatInterval = setInterval(loadHeartbeat, 10000);
+            } else {
+                // Stop auto-refresh
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
+            }
+        }
+        
+        // ============ Service Management Functions ============
+        async function startService(serviceName) {
+            try {
+                const response = await fetch('api/services/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service: serviceName })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showServiceNotification(`✓ ${formatServiceName(serviceName)} started successfully`, 'success');
+                    setTimeout(() => loadHeartbeat(), 2000); // Reload after 2 seconds
+                } else {
+                    showServiceNotification(`✗ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showServiceNotification(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function stopService(serviceName) {
+            try {
+                const response = await fetch(`api/services/stop/${serviceName}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    showServiceNotification(`✓ ${formatServiceName(serviceName)} stopped successfully`, 'success');
+                    setTimeout(() => loadHeartbeat(), 2000); // Reload after 2 seconds
+                } else {
+                    showServiceNotification(`✗ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showServiceNotification(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function viewServiceLogs(serviceName) {
+            try {
+                const response = await fetch(`api/services/logs/${serviceName}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    openLogViewer(serviceName, data.content, data.path);
+                } else {
+                    showServiceNotification(`✗ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showServiceNotification(`✗ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function openLogViewer(serviceName, content, path) {
+            const modal = document.getElementById('log-viewer-modal');
+            const title = document.getElementById('log-viewer-title');
+            const logContent = document.getElementById('log-content');
+            const pathDisplay = document.getElementById('log-path');
+            
+            title.textContent = `${formatServiceName(serviceName)} - Logs`;
+            logContent.textContent = content;
+            pathDisplay.textContent = `Path: ${path}`;
+            
+            modal.style.display = 'block';
+        }
+        
+        function closeLogViewer() {
+            const modal = document.getElementById('log-viewer-modal');
+            modal.style.display = 'none';
+        }
+        
+        function downloadLogs() {
+            const logContent = document.getElementById('log-content').textContent;
+            const title = document.getElementById('log-viewer-title').textContent;
+            
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(logContent));
+            element.setAttribute('download', `${title.replace(' - Logs', '')}_logs.txt`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+        
+        function copyToClipboard() {
+            const logContent = document.getElementById('log-content').textContent;
+            navigator.clipboard.writeText(logContent).then(() => {
+                showServiceNotification('✓ Logs copied to clipboard', 'success');
+            }).catch(err => {
+                showServiceNotification('✗ Failed to copy logs', 'error');
+            });
+        }
+        
+        function showServiceNotification(message, type) {
+            const notif = document.createElement('div');
+            notif.className = `service-notification ${type}`;
+            notif.textContent = message;
+            notif.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                background: ${type === 'success' ? '#4ade80' : '#ff6b6b'};
+                color: white;
+                border-radius: 8px;
+                z-index: 10001;
+                font-weight: 500;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            `;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.style.opacity = '0';
+                notif.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => notif.remove(), 300);
+            }, 3000);
+        }
+        
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            const modal = document.getElementById('log-viewer-modal');
+            if (event.target === modal) {
+                closeLogViewer();
+            }
+        });
+        
+        // Tickers tab functions
+        let tickersInterval = null;
+        
+        function toggleTickersAutoRefresh() {
+            const checkbox = document.getElementById('tickers-auto-refresh');
+            
+            if (checkbox.checked) {
+                // Start auto-refresh every 5 seconds
+                tickersInterval = setInterval(loadTickers, 5000);
+            } else {
+                // Stop auto-refresh
+                if (tickersInterval) {
+                    clearInterval(tickersInterval);
+                    tickersInterval = null;
+                }
+            }
+        }
+        
+        async function loadTickers() {
+            const container = document.getElementById('tickers-content');
+            
+            try {
+                const data = await fetchJSON('api/tickers');
+                
+                if (data.success && data.tickers && data.tickers.length > 0) {
+                    // Get all unique field names from all tickers
+                    const allFields = new Set();
+                    allFields.add('exchange');
+                    allFields.add('ticker');
+                    
+                    data.tickers.forEach(ticker => {
+                        if (ticker.data && typeof ticker.data === 'object') {
+                            Object.keys(ticker.data).forEach(field => allFields.add(field));
+                        }
+                    });
+                    
+                    // Fields to exclude from display
+                    const excludeFields = ['key', 'ltt', 'security_id', 'total_buy_qty', 'total_sell_qty', 'ts_recv'];
+                    excludeFields.forEach(f => allFields.delete(f));
+                    
+                    // Sort fields for consistent column order (key fields first, then others)
+                    const priorityFields = ['exchange', 'ticker', 'ltp', 'atp', 'open', 'high', 'low', 'volume', 'ltt_time'];
+                    const sortedFields = [];
+                    priorityFields.forEach(f => {
+                        if (allFields.has(f)) {
+                            sortedFields.push(f);
+                            allFields.delete(f);
+                        }
+                    });
+                    // Add remaining fields
+                    allFields.forEach(f => sortedFields.push(f));
+                    
+                    // Build table header
+                    let html = '<table class="tickers-table"><thead><tr>';
+                    sortedFields.forEach(field => {
+                        html += `<th>${formatLabel(field)}</th>`;
+                    });
+                    html += '</tr></thead><tbody>';
+                    
+                    // Build table rows
+                    data.tickers.forEach(ticker => {
+                        html += '<tr>';
+                        sortedFields.forEach((field, idx) => {
+                            let value = '';
+                            let cellClass = '';
+                            
+                            if (ticker.data && ticker.data[field] !== undefined) {
+                                value = ticker.data[field];
+                                
+                                // Convert volume to thousands
+                                if (field === 'volume' && typeof value === 'number') {
+                                    value = (value / 1000).toFixed(1);
+                                }
+                                // Format numbers to 2 decimal places if applicable
+                                else if (typeof value === 'number' && !Number.isInteger(value)) {
+                                    value = value.toFixed(2);
+                                }
+                                
+                                // Extract time only from datetime fields
+                                if ((field === 'ltt_time' || field === 'current_time') && typeof value === 'string') {
+                                    const timeMatch = value.match(/(\d{2}:\d{2}:\d{2})/);
+                                    if (timeMatch) {
+                                        value = timeMatch[1];
+                                    }
+                                }
+                                
+                                // Apply color coding based on field and value
+                                if (field === 'ticker') {
+                                    cellClass = 'ticker-name';
+                                } else if (field === 'exchange') {
+                                    cellClass = 'exchange-tag';
+                                } else if (field === 'ltp' || field === 'atp') {
+                                    // Color based on price vs open
+                                    const ltp = parseFloat(ticker.data.ltp) || 0;
+                                    const open = parseFloat(ticker.data.open) || 0;
+                                    if (ltp > open) cellClass = 'value-up';
+                                    else if (ltp < open) cellClass = 'value-down';
+                                    else cellClass = 'value-neutral';
+                                } else if (field === 'volume') {
+                                    cellClass = 'value-neutral';
+                                }
+                            }
+                            
+                            html += `<td class="${cellClass}">${escapeHtml(String(value))}</td>`;
+                        });
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = '<div class="tickers-loading"><p>No tickers found</p></div>';
+                }
+            } catch (error) {
+                console.error('Error loading tickers:', error);
+                container.innerHTML = `
+                    <div class="tickers-loading">
+                        <p style="color: #ff6b6b;">Error loading tickers: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // ============ Redis Orders Tab Functions ============
+        let redisOrdersInterval = null;
+        
+        function toggleRedisOrdersAutoRefresh() {
+            const checkbox = document.getElementById('redis-orders-auto-refresh');
+            if (checkbox.checked) {
+                startRedisOrdersAutoRefresh();
+            } else {
+                stopRedisOrdersAutoRefresh();
+            }
+        }
+        
+        function startRedisOrdersAutoRefresh() {
+            if (redisOrdersInterval) clearInterval(redisOrdersInterval);
+            redisOrdersInterval = setInterval(() => {
+                loadRedisOrders();
+            }, 5000);
+        }
+        
+        function stopRedisOrdersAutoRefresh() {
+            if (redisOrdersInterval) {
+                clearInterval(redisOrdersInterval);
+                redisOrdersInterval = null;
+            }
+        }
+        
+        async function initRedisOrdersTab() {
+            // Load brokers on first visit
+            const brokerSelect = document.getElementById('redis-broker');
+            if (brokerSelect.options.length <= 1) {
+                try {
+                    const data = await fetchJSON('api/redis-orders/brokers');
+                    if (data.success && data.brokers) {
+                        brokerSelect.innerHTML = '<option value="">Select Broker</option>';
+                        data.brokers.forEach(broker => {
+                            const option = document.createElement('option');
+                            option.value = broker;
+                            option.textContent = broker;
+                            brokerSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading redis brokers:', error);
+                }
+            }
+        }
+        
+        async function onRedisBrokerChange() {
+            const broker = document.getElementById('redis-broker').value;
+            const accountSelect = document.getElementById('redis-account');
+            
+            // Reset dependent fields
+            accountSelect.innerHTML = '<option value="">Select Account</option>';
+            accountSelect.disabled = true;
+            clearDropdown('redis-exchange-dropdown', 'All Exchanges');
+            setDropdownEnabled('redis-exchange-dropdown', false);
+            clearDropdown('redis-symbol-dropdown', 'All Stocks');
+            setDropdownEnabled('redis-symbol-dropdown', false);
+            clearDropdown('redis-status-dropdown', 'All Statuses');
+            setDropdownEnabled('redis-status-dropdown', false);
+            
+            if (!broker) return;
+            
+            try {
+                const data = await fetchJSON(`api/redis-orders/accounts?broker=${broker}`);
+                if (data.success && data.accounts) {
+                    accountSelect.disabled = false;
+                    data.accounts.forEach(account => {
+                        const option = document.createElement('option');
+                        option.value = account;
+                        option.textContent = account;
+                        accountSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading redis accounts:', error);
+            }
+        }
+        
+        async function onRedisAccountChange() {
+            const broker = document.getElementById('redis-broker').value;
+            const account = document.getElementById('redis-account').value;
+            
+            // Reset dependent fields
+            clearDropdown('redis-exchange-dropdown', 'All Exchanges');
+            setDropdownEnabled('redis-exchange-dropdown', false);
+            clearDropdown('redis-symbol-dropdown', 'All Stocks');
+            setDropdownEnabled('redis-symbol-dropdown', false);
+            clearDropdown('redis-status-dropdown', 'All Statuses');
+            setDropdownEnabled('redis-status-dropdown', false);
+            
+            if (!broker || !account) return;
+            
+            try {
+                const data = await fetchJSON(`api/redis-orders/filters?broker=${broker}&account=${account}`);
+                if (data.success) {
+                    // Populate exchanges
+                    if (data.exchanges && data.exchanges.length > 0) {
+                        setDropdownEnabled('redis-exchange-dropdown', true);
+                        populateCheckboxDropdown('redis-exchange-dropdown', data.exchanges);
+                    }
+                    
+                    // Populate symbols
+                    if (data.symbols && data.symbols.length > 0) {
+                        setDropdownEnabled('redis-symbol-dropdown', true);
+                        populateCheckboxDropdown('redis-symbol-dropdown', data.symbols);
+                    }
+                    
+                    // Populate statuses
+                    if (data.statuses && data.statuses.length > 0) {
+                        setDropdownEnabled('redis-status-dropdown', true);
+                        populateCheckboxDropdown('redis-status-dropdown', data.statuses);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading redis filters:', error);
+            }
+        }
+        
+        function getRedisFilters() {
+            return {
+                broker: document.getElementById('redis-broker').value,
+                account: document.getElementById('redis-account').value,
+                exchanges: getDropdownValues('redis-exchange-dropdown'),
+                symbols: getDropdownValues('redis-symbol-dropdown'),
+                statuses: getDropdownValues('redis-status-dropdown')
+            };
+        }
+        
+        // Get side badge for Redis orders
+        function getSideBadge(side) {
+            const s = (side || '').toUpperCase();
+            if (s === 'BUY' || s === 'B') return '<span class="badge badge-buy">BUY</span>';
+            if (s === 'SELL' || s === 'S') return '<span class="badge badge-sell">SELL</span>';
+            return side || '-';
+        }
+        
+        // Get status badge for Redis orders
+        function getRedisStatusBadge(status) {
+            const s = (status || '').toUpperCase();
+            if (s.includes('COMPLETE') || s.includes('FILLED')) return `<span class="badge badge-complete">${status}</span>`;
+            if (s.includes('REJECT') || s.includes('CANCEL')) return `<span class="badge badge-rejected">${status}</span>`;
+            if (s.includes('OPEN') || s.includes('PENDING')) return `<span class="badge badge-pending">${status}</span>`;
+            return `<span class="badge badge-pending">${status || '-'}</span>`;
+        }
+        
+        async function loadRedisOrders() {
+            const { broker, account, exchanges, symbols, statuses } = getRedisFilters();
+            
+            const loading = document.getElementById('redis-loading');
+            const emptyState = document.getElementById('redis-empty-state');
+            const tableContainer = document.getElementById('redis-table-container');
+            
+            if (!broker || !account) {
+                emptyState.innerHTML = '<h3>Select Broker and Account</h3><p>Please select a broker and account to view orders</p>';
+                emptyState.style.display = 'block';
+                tableContainer.style.display = 'none';
+                return;
+            }
+            
+            loading.classList.add('active');
+            emptyState.style.display = 'none';
+            tableContainer.style.display = 'none';
+            
+            try {
+                // Build query string
+                const params = new URLSearchParams();
+                params.append('broker', broker);
+                params.append('account', account);
+                exchanges.forEach(e => params.append('exchange', e));
+                symbols.forEach(s => params.append('symbol', s));
+                statuses.forEach(s => params.append('status', s));
+                
+                const data = await fetchJSON(`api/redis-orders?${params}`);
+                
+                if (data.success) {
+                    const orders = data.orders || [];
+                    
+                    // Calculate stats
+                    const buyCount = orders.filter(o => (o.side || '').toUpperCase() === 'BUY' || (o.side || '').toUpperCase() === 'B').length;
+                    const sellCount = orders.filter(o => (o.side || '').toUpperCase() === 'SELL' || (o.side || '').toUpperCase() === 'S').length;
+                    const completeCount = orders.filter(o => (o.status || '').toUpperCase().includes('COMPLETE') || (o.status || '').toUpperCase().includes('FILLED')).length;
+                    const rejectedCount = orders.filter(o => (o.status || '').toUpperCase().includes('REJECT') || (o.status || '').toUpperCase().includes('CANCEL')).length;
+                    
+                    // Update stats
+                    document.getElementById('redis-stat-total').textContent = orders.length;
+                    document.getElementById('redis-stat-buy').textContent = buyCount;
+                    document.getElementById('redis-stat-sell').textContent = sellCount;
+                    document.getElementById('redis-stat-complete').textContent = completeCount;
+                    document.getElementById('redis-stat-rejected').textContent = rejectedCount;
+                    
+                    // Render orders
+                    const tbody = document.getElementById('redis-orders-body');
+                    
+                    if (orders.length === 0) {
+                        emptyState.innerHTML = '<h3>No Orders Found</h3><p>No orders found for the selected filters</p>';
+                        emptyState.style.display = 'block';
+                    } else {
+                        tbody.innerHTML = orders.map(order => `
+                            <tr>
+                                <td><strong>${order.symbol || '-'}</strong></td>
+                                <td>${getSideBadge(order.side)}</td>
+                                <td>${getRedisStatusBadge(order.status)}</td>
+                                <td>${order.order_qty || order.qty || '-'}</td>
+                                <td>${order.filled_qty || order.fillshares || '0'}</td>
+                                <td>${order.price ? '₹' + parseFloat(order.price).toFixed(2) : '-'}</td>
+                                <td>${order.remarks || order.rejection_reason || '-'}</td>
+                                <td>${order.order_time || '-'}</td>
+                                <td>${order.exch_timestamp || '-'}</td>
+                            </tr>
+                        `).join('');
+                        tableContainer.style.display = 'block';
+                    }
+                } else {
+                    emptyState.innerHTML = `<h3>Error</h3><p style="color: #ff6b6b;">${data.error || 'Failed to load orders'}</p>`;
+                    emptyState.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading redis orders:', error);
+                emptyState.innerHTML = '<h3>Error Loading Orders</h3><p>Check console for details</p>';
+                emptyState.style.display = 'block';
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+        
+        function resetRedisFilters() {
+            document.getElementById('redis-broker').value = '';
+            document.getElementById('redis-account').innerHTML = '<option value="">Select Account</option>';
+            document.getElementById('redis-account').disabled = true;
+            clearDropdown('redis-exchange-dropdown', 'All Exchanges');
+            setDropdownEnabled('redis-exchange-dropdown', false);
+            clearDropdown('redis-symbol-dropdown', 'All Stocks');
+            setDropdownEnabled('redis-symbol-dropdown', false);
+            clearDropdown('redis-status-dropdown', 'All Statuses');
+            setDropdownEnabled('redis-status-dropdown', false);
+            
+            // Reset stats
+            ['redis-stat-total', 'redis-stat-buy', 'redis-stat-sell', 'redis-stat-complete', 'redis-stat-rejected'].forEach(id => {
+                document.getElementById(id).textContent = '-';
+            });
+            
+            // Reset table
+            document.getElementById('redis-table-container').style.display = 'none';
+            document.getElementById('redis-empty-state').style.display = 'block';
+            document.getElementById('redis-empty-state').innerHTML = '<h3>No Orders Loaded</h3><p>Select broker and account, then click "Load Orders" to view data</p>';
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllPositions();
+        });
     </script>
 </body>
 </html>
