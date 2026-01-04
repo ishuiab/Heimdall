@@ -34,7 +34,18 @@ class Config:
             "LOG_NAME":"execution_engine.log"
         }
     }
+
+    #BOT COMMANDS
+    BOT_COMMANDS = {
+        "ETF_FMV_SCALPER":{
+            "COMMAND":"/mnt/DATA/LINUX_VENVS/FMV_SCALPER/bin/python /mnt/HDD/hypotheis/FMV_SCALPER/ETF_FMV.py",
+            "LOGS_PATH":"/home/algobaba/DATALORE/logs/FMV_LOGS/"
+        }
+    }
     
+    #CONFIGS
+    CONFIG_BASE_PATH = "/home/algobaba/DATALORE/CONFIGS/"
+    LOGS_BASE_PATH   = "/home/algobaba/DATALORE/logs/"
     
     @classmethod
     def get_connection_string(cls):

@@ -3,12 +3,14 @@ Lightweight Flask application for viewing trading orders
 Uses HTMX for dynamic updates without heavy JavaScript frameworks
 """
 
+from fileinput import filename
 from flask import Flask, render_template, request, jsonify
 import psycopg2
 import redis
 import os
 import json
 import requests
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -56,11 +58,14 @@ BROKERS = [
 ]
 
 # Config files directory
-CONFIG_DIR = "/home/algobaba/DATALORE/hypotheis/FMV_SCALPER/configs"
-TOKEN_PATH = Config.TOKENS_PATH
+CONFIGS_BASE_PATH = Config.CONFIG_BASE_PATH
+CONFIG_DIR        = "/home/algobaba/DATALORE/hypotheis/FMV_SCALPER/configs"
+TOKEN_PATH        = Config.TOKENS_PATH
+LOGS_BASE_PATH    = Config.LOGS_BASE_PATH
 
-#Services commands and logs path from Config
+#Services and bot commands and logs path from Config
 SERVICE_COMMANDS = Config.SERVICE_COMMANDS
+BOT_COMMANDS     = Config.BOT_COMMANDS
 
 @app.route("/")
 def index():
@@ -541,7 +546,7 @@ def get_token_status(account, broker):
                 except json.JSONDecodeError:
                     return "Invalid token: Unable to parse response"
             else:
-                return f"Invalid token: HTTP {resp.status_code}"
+                return f"Invalid"
         except Exception as e:
             return f"Invalid token: {str(e)}"
     elif broker.lower() == "dhan":
@@ -574,7 +579,6 @@ def get_token_status(account, broker):
         return f"Unknown broker {broker.upper()}"
     
     return "Unknown error"
-
 
 def verify_token_with_value(account, broker, token_value):
     """Verify a provided token value for a broker/account. Returns a status string similar to get_token_status."""
@@ -630,7 +634,7 @@ def verify_token_with_value(account, broker, token_value):
                 except json.JSONDecodeError:
                     return "Invalid token: Unable to parse response"
             elif resp.status_code == 401:
-                return f"Invalid"
+                return f"Invalid token: Unauthorized"
             else:
                 return f"Invalid token: HTTP {resp.status_code}"
         except Exception as e:
@@ -720,7 +724,6 @@ def get_token_validity():
             "token_path": TOKEN_PATH
         }), 500
 
-
 @app.route("/api/tokens")
 def api_list_tokens():
     """Return tokens found in TOKEN_PATH for the frontend token manager."""
@@ -753,7 +756,6 @@ def api_list_tokens():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-
 @app.route('/api/tokens/check', methods=['POST'])
 def api_check_token():
     try:
@@ -770,7 +772,6 @@ def api_check_token():
         return jsonify({'success': True, 'status': status, 'valid': valid})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
 
 @app.route('/api/tokens/save', methods=['POST'])
 def api_save_token():
@@ -926,9 +927,12 @@ def fetch_shoonya_positions(account, token, result):
                         if "Session" in error_msg or "Invalid" in error_msg:
                             result["token_status"] = "invalid"
                             result["error"] = f"Invalid token: {error_msg}"
+                        elif "no data" in error_msg:
+                            result["token_status"] = "valid"
+                            result["positions"] = []
                         else:
                             result["token_status"] = "valid"
-                            result["error"] = error_msg
+                            result["error"]        = error_msg
                     else:
                         result["token_status"] = "valid"
                         result["positions"] = []
@@ -943,7 +947,7 @@ def fetch_shoonya_positions(account, token, result):
             result["token_status"] = "unknown"
             
     except Exception as e:
-        result["error"] = str(e)
+        result["error"] = f"{str(e)}"
         result["token_status"] = "error"
     
     return result
@@ -1283,7 +1287,6 @@ def get_tickers():
         }), 500
 
 # ============ Funds API Routes ============
-
 @app.route("/api/funds/all")
 def get_all_funds():
     """Get funds/balance data for all accounts from token files."""
@@ -1877,6 +1880,515 @@ def stop_service(service_name):
             }), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============ Bot Manager API Routes ============
+def get_order_range(config, etf_fmv):
+    """
+    Generate buy and sell order ranges based on FMV and config parameters.
+
+    Output structure:
+    {
+        "buy": {
+            "TICKER": {
+                "99.00": {"QTY": 10, "TARGET": 100.25}
+            }
+        },
+        "sell": {
+            "TICKER": {
+                "101.00": {"QTY": 10, "TARGET": 100.75}
+            }
+        }
+    }
+    """
+    try:
+        # ---------- Validation ----------
+        tickers = config.get("tickers", [])
+        if not tickers:
+            raise ValueError("No tickers found in config")
+
+        if not etf_fmv or etf_fmv <= 0:
+            raise ValueError(f"Invalid ETF FMV: {etf_fmv}")
+
+        # ---------- Init ----------
+        order_range = {"buy": {}, "sell": {}}
+
+        buy_enabled  = bool(config.get("action", {}).get("buy", False))
+        sell_enabled = bool(config.get("action", {}).get("sell", False))
+
+        start_qty_buy  = config.get("starting_quantity", {}).get("buy", 0)
+        start_qty_sell = config.get("starting_quantity", {}).get("sell", 0)
+
+        max_qty_buy  = config.get("max_quantity", {}).get("buy", 0)
+        max_qty_sell = config.get("max_quantity", {}).get("sell", 0)
+
+        max_orders_buy  = config.get("max_orders", {}).get("buy", 0)
+        max_orders_sell = config.get("max_orders", {}).get("sell", 0)
+
+        buy_mult  = config.get("multiplier", {}).get("buy", 0)
+        sell_mult = config.get("multiplier", {}).get("sell", 0)
+        
+
+        if buy_mult < 0 or sell_mult < 0:
+            raise ValueError("Multipliers cannot be negative")
+
+        buy_margin      = config.get("margin", {}).get("buy", 0)
+        sell_margin     = config.get("margin", {}).get("sell", 0)
+
+        step_buy_pct    = config.get("step", {}).get("buy", 0)
+        step_sell_pct   = config.get("step", {}).get("sell", 0)
+
+        # ---------- Initial Prices ----------
+        buy_price  = round(etf_fmv * (1 - buy_margin / 100), 2)
+        sell_price = round(etf_fmv * (1 + sell_margin / 100), 2)
+
+        step_buy_abs  = round(etf_fmv * step_buy_pct / 100, 2)
+        step_sell_abs = round(etf_fmv * step_sell_pct / 100, 2)
+
+        # ---------- Per-side state ----------
+        curr_buy_qty  = start_qty_buy
+        curr_sell_qty = start_qty_sell
+
+        total_buy_qty  = 0
+        total_sell_qty = 0
+
+        buy_count  = 0
+        sell_count = 0
+
+        # ---------- Init tickers ----------
+        for t in tickers:
+            order_range["buy"][t]  = {}
+            order_range["sell"][t] = {}
+
+            order_range["config"]  = {}
+            order_range["config"]["ETF FMV"]     = etf_fmv
+            order_range["config"]["Start Buy"]   = start_qty_buy
+            order_range["config"]["Start Sell"]  = start_qty_sell
+            order_range["config"]["Max Buy"]     = max_qty_buy
+            order_range["config"]["Max Sell"]    = max_qty_sell
+            order_range["config"]["Margin Buy"]  = buy_margin
+            order_range["config"]["Margin Sell"] = sell_margin
+            
+        # ---------- Main loop ----------
+        max_iters = max(max_orders_buy, max_orders_sell)
+
+        for i in range(max_iters):
+            # --- BUY SIDE ---
+            if buy_enabled and buy_count < max_orders_buy and total_buy_qty < max_qty_buy:
+                if i > 0:
+                    curr_buy_qty = int(curr_buy_qty * (1 + buy_mult))
+                    buy_price   = round(buy_price - step_buy_abs, 2)
+
+                if buy_price > 0 and curr_buy_qty > 0:
+                    final_qty = min(curr_buy_qty, max_qty_buy - total_buy_qty)
+
+                    if final_qty > 0:
+                        target_offset = get_target_limit(buy_price, etf_fmv, "BUY", config)
+                        final_target  = round(buy_price + target_offset, 2)
+
+                        price_key = f"{buy_price:.2f}"
+
+                        for t in tickers:
+                            order_range["buy"][t][price_key] = {
+                                "QTY": final_qty,
+                                "TARGET": final_target
+                            }
+
+                        total_buy_qty += final_qty
+                        buy_count += 1
+
+            # --- SELL SIDE ---
+            if sell_enabled and sell_count < max_orders_sell and total_sell_qty < max_qty_sell:
+                if i > 0:
+                    curr_sell_qty = int(curr_sell_qty * (1 + sell_mult))
+                    sell_price   = round(sell_price + step_sell_abs, 2)
+
+                if curr_sell_qty > 0:
+                    final_qty = min(curr_sell_qty, max_qty_sell - total_sell_qty)
+
+                    if final_qty > 0:
+                        target_offset = get_target_limit(sell_price, etf_fmv, "SELL", config)
+                        final_target  = round(sell_price + target_offset, 2)
+
+                        price_key = f"{sell_price:.2f}"
+
+                        for t in tickers:
+                            order_range["sell"][t][price_key] = {
+                                "QTY": final_qty,
+                                "TARGET": final_target
+                            }
+
+                        total_sell_qty += final_qty
+                        sell_count += 1
+
+            if (
+                (not buy_enabled or buy_count >= max_orders_buy or total_buy_qty >= max_qty_buy)
+                and
+                (not sell_enabled or sell_count >= max_orders_sell or total_sell_qty >= max_qty_sell)
+            ):
+                break
+
+        return order_range
+
+    except Exception as e:
+        # IMPORTANT: never fail silently in trading code
+        return None
+
+def get_target_limit(entry_price, fmv_price, side, config, debug=False):
+    """
+    Calculate target profit limit based on 50-50 split of FMV-to-entry gap.
+    
+    Strategy:
+    - Never sell below FMV or buy above FMV (constraint ensures favorable entry)
+    - Split the gap between FMV and entry price 50-50 with the market
+    - Keep 50% of gap as profit, give 50% to market for counter order
+    - Enforce min/max profit boundaries
+    
+    Examples:
+    - BUY @ 22.26, FMV @ 22.37: Gap = 0.11, Your profit = 0.055
+      Counter SELL target = 22.26 + 0.055 = 22.315
+    
+    - SELL @ 22.37, FMV @ 22.26: Gap = 0.11, Your profit = 0.055
+      Counter BUY target = 22.37 - 0.055 = 22.315
+    
+    Args:
+        entry_price (float): Price at which the order was placed
+        fmv_price (float): Fair Market Value of the ETF
+        side (str): "BUY" (Buy) or "SELL" (Sell)
+        config (dict): Configuration with target.minimum and target.maximum percentages
+
+    Returns:
+        float: Profit amount in rupees (positive for Buy, negative for Sell), or None on error
+    """    
+    try:
+        # ===== INPUT VALIDATION =====
+        if not isinstance(entry_price, (int, float)) or entry_price <= 0:
+            return None
+        if not isinstance(fmv_price, (int, float)) or fmv_price <= 0:
+            return None
+        if side not in ["BUY", "SELL"]:
+            return None
+
+        # ===== GET TARGET LIMITS FROM CONFIG =====
+        target_limits  = config.get("target", {})
+        min_target_pct = target_limits.get("minimum", 1)      # Default: 1%
+        max_target_pct = target_limits.get("maximum", 2)      # Default: 2%
+        
+        min_target_value = round((min_target_pct / 100) * entry_price, 2)
+        max_target_value = round((max_target_pct / 100) * entry_price, 2)
+
+        # ===== CALCULATE 50-50 SPLIT OF FMV-TO-ENTRY GAP =====
+        # Since we never buy above FMV or sell below FMV, the gap is always favorable
+        gap               = abs(fmv_price - entry_price)
+        your_profit_share = round(gap / 2, 2)
+        
+        # ===== CALCULATE DYNAMIC TARGET (MARGIN + 50% OF GAP) =====
+        # Dynamic target combines margin requirements with half the FMV-to-entry gap
+        buy_margin  = (config.get("margin", {}).get("buy", 0)/2)
+        sell_margin = (config.get("margin", {}).get("sell", 0)/2)
+
+        margin_value = 0
+        if side == "BUY":
+            margin_value = round((buy_margin / 100) * entry_price, 2)
+        else:  # side == "S"
+            margin_value = round((sell_margin / 100) * entry_price, 2)
+        
+        dynamic_target = round(margin_value + your_profit_share, 2)
+        
+        # ===== ENFORCE MIN/MAX PROFIT CONSTRAINTS =====
+        # Apply min/max boundaries: final_target = min(max(dynamic, min), max)
+        final_target = min(max(dynamic_target, min_target_value), max_target_value)
+
+        # ===== APPLY SIDE LOGIC =====
+        # For SELL side, return negative value (subtract from entry price)
+        # For BUY side, return positive value (add to entry price)
+        if side == "SELL":
+            final_target = -final_target
+            counter_price = round(entry_price + final_target, 2)  # entry - positive_target = entry - value
+           
+        else:  # side == "B"
+            counter_price = round(entry_price + final_target, 2)  # entry + value
+        return final_target
+    
+    except Exception as e:
+        return None
+
+def calculate_etf_fmv(config):
+    """
+    Calculate ETF Fair Market Value (FMV).
+    
+    FMV = ETF_close × (asset_open / asset_close) × (currency_open / currency_close)
+    
+    Returns:
+        float: Calculated FMV, or None on error
+    """
+    try:
+        # Extract values with proper error handling
+        asset    = config.get("asset", {})
+        currency = config.get("currency", {})
+        
+        open_price      = asset.get("open")
+        close_price     = asset.get("close")
+        currency_open   = currency.get("open", 1)
+        currency_close  = currency.get("close", 1)
+        etf_close       = config.get("ETF")
+
+        # Validate required values
+        if None in [open_price, close_price, etf_close]:
+            return None
+        
+        # Validate numeric types
+        if not all(isinstance(v, (int, float)) for v in [open_price, close_price, currency_open, currency_close, etf_close]):
+            return None
+        
+        # Validate positive values
+        if any(v <= 0 for v in [open_price, close_price, etf_close, currency_open, currency_close]):
+            return None
+        
+        # Calculate components
+        asset_ratio      = open_price / close_price
+        currency_factor  = currency_open / currency_close
+
+        
+        # Calculate FMV
+        fmv      = round(etf_close * asset_ratio * currency_factor, 2)
+        
+        return fmv
+    
+    except (KeyError, TypeError, ValueError) as e:
+        return None
+
+def read_bot_log(path):
+    """Read bot log content from specified log file path"""
+    p = Path(path)
+    filename = p.stem
+    try:
+        account_in_file, ticker = filename.split("_",1) 
+    except ValueError:
+        raise ValueError(f"Invalid log file name format {path}, expected ACCOUNT_TICKER_*.json")
+    account  = p.parent.name
+    broker   = p.parent.parent.name  
+    strategy = p.parent.parent.parent.name
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    LOG_NAME     = f"{ticker}_{account}.log"
+    LOG_PATH     = os.path.join(Config.LOGS_BASE_PATH, "STRATEGY_LOGS", strategy, broker, account,current_date, LOG_NAME)
+
+    if os.path.exists(LOG_PATH):
+        with open(LOG_PATH, 'r') as f:
+            content = f.read()
+        return {
+            "success": True,
+            "content": content,
+            "path": LOG_PATH,
+            "strategy": strategy,
+            "broker": broker,
+            "account": account,
+            "ticker": ticker
+        }
+    else:
+        raise FileNotFoundError(f"Log file not found at {LOG_PATH}")
+
+
+@app.route("/api/bot/strategies")
+def get_bot_strategies():
+    """Get all available strategies from CONFIGS/STRATEGIES"""
+    try:
+        strategies_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES")
+        strategies = []
+        
+        if os.path.exists(strategies_path):
+            # List all strategy folders (SHOONYA, DHAN, etc.)
+            for broker_folder in os.listdir(strategies_path):
+                broker_path = os.path.join(strategies_path, broker_folder)
+                if os.path.isdir(broker_path):
+                    strategies.append(broker_folder)
+        
+        return jsonify({"success": True, "strategies": sorted(strategies)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/brokers")
+def get_bot_brokers():
+    """Get all brokers for a given strategy"""
+    try:
+        strategy = request.args.get("strategy", "")
+        if not strategy:
+            return jsonify({"success": False, "error": "Strategy parameter required"}), 400
+        
+        brokers_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy)
+        brokers = []
+        
+        if os.path.exists(brokers_path):
+            # List all account folders (these are broker identifiers like FA394567)
+            for account_folder in os.listdir(brokers_path):
+                account_path = os.path.join(brokers_path, account_folder)
+                if os.path.isdir(account_path):
+                    brokers.append(account_folder)
+        
+        return jsonify({"success": True, "brokers": sorted(brokers)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/accounts")
+def get_bot_accounts():
+    """Get all accounts for a given strategy and broker"""
+    try:
+        strategy = request.args.get("strategy", "")
+        broker = request.args.get("broker", "")
+        
+        if not strategy or not broker:
+            return jsonify({"success": False, "error": "Strategy and broker parameters required"}), 400
+        
+        accounts_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy, broker)
+        accounts = []
+        
+        if os.path.exists(accounts_path):
+            # List all strategy type folders (e.g., ETF_FMV)
+            for strategy_type in os.listdir(accounts_path):
+                strategy_path = os.path.join(accounts_path, strategy_type)
+                if os.path.isdir(strategy_path):
+                    accounts.append(strategy_type)
+        
+        return jsonify({"success": True, "accounts": sorted(accounts)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/config_details")
+def get_bot_config_details():
+    """Get details of a specific config file"""
+    try:
+        config_file = request.args.get("config_path", "")
+        
+        if not config_file:
+            return jsonify({"success": False, "error": "Config path parameter required"}), 400
+        
+        config_details = {}
+        
+        if os.path.exists(config_file):
+            try:
+                with open(config_file, 'r') as f:
+                    config_content = json.load(f)
+                config_details = {
+                    "name": os.path.basename(config_file),
+                    "path": config_file,
+                    "content": config_content
+                }
+            except json.JSONDecodeError:
+                config_details = {
+                    "name": os.path.basename(config_file),
+                    "path": config_file,
+                    "error": "Invalid JSON"
+                }
+        
+        return jsonify({"success": True, "config": config_details})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/configs")
+def get_bot_configs():
+    """Get all config files for a given strategy, broker, and account"""
+    try:
+        strategy = request.args.get("strategy", "")
+        broker   = request.args.get("broker", "")
+        account  = request.args.get("account", "")
+        
+        if not strategy or not broker or not account:
+            return jsonify({"success": False, "error": "Strategy, broker, and account parameters required"}), 400
+        
+        configs_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy, broker, account)
+        configs = []
+        
+        if os.path.exists(configs_path):
+            # List all JSON files in the directory
+            for filename in sorted(os.listdir(configs_path)):
+                if filename.endswith('.json'):
+                    filepath = os.path.join(configs_path, filename)
+                    try:
+                        with open(filepath, 'r') as f:
+                            config_content = json.load(f)
+                        configs.append({
+                            "name": filename,
+                            "path": filepath,
+                            "content": config_content
+                        })
+                    except json.JSONDecodeError:
+                        configs.append({
+                            "name": filename,
+                            "path": filepath,
+                            "error": "Invalid JSON"
+                        })
+        
+        return jsonify({"success": True, "configs": configs})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/logs")
+def get_bot_logs():
+    """Get bot log content for a given bot config path"""
+
+    config_path = request.args.get("config_path")
+    if not config_path:
+        return jsonify({
+            "success": False,
+            "error": "Missing required parameter: config_path"
+        }), 400
+
+    try:
+        logs = read_bot_log(config_path)
+        return jsonify(logs), 200
+
+    except ValueError as e:
+        # Bad filename / invalid format
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 400
+
+    except FileNotFoundError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 404
+
+    except PermissionError:
+        return jsonify({
+            "success": False,
+            "error": "Permission denied while accessing log file"
+        }), 403
+
+    except Exception as e:
+        # Real server error
+        app.logger.exception("Unhandled error while reading bot logs")
+        return jsonify({
+            "success": False,
+            "error": "Internal server error"
+        }), 500
+
+@app.route("/api/bot/order_range")
+def get_bot_order_range():
+    """Get order range (min/max order amounts) for a given strategy, broker, and account"""
+    try:
+        config_file = request.args.get("config_path", "")
+        
+        if not config_file:
+            return jsonify({"success": False, "error": "Config path parameter required"}), 400
+        
+        if os.path.exists(config_file):
+           try:
+                with open(config_file, 'r') as f:
+                    config_content = json.load(f)
+                etf_fmv     = calculate_etf_fmv(config_content)
+                order_range = get_order_range(config_content, etf_fmv)
+
+  
+           except json.JSONDecodeError:
+                config_file.append({
+                "config": config_file,
+                "error": "Invalid JSON"
+            })
+        
+        return jsonify({"success": True, "order_ranges": order_range})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

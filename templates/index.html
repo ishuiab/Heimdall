@@ -2028,6 +2028,305 @@
         .modal-body::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+        
+        /* Bot Manager Tab Styles */
+        .bot-manager-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .bot-manager-filters {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .bot-manager-filters h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 180px;
+        }
+        
+        .filter-group label {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bot-configs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        
+        .bot-configs-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+        
+        .bot-configs-table th {
+            padding: 12px 15px;
+            text-align: left;
+            color: #00d4ff;
+            font-weight: 600;
+            border-bottom: 2px solid #00d4ff;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .bot-configs-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            vertical-align: middle;
+        }
+        
+        .bot-configs-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.08);
+        }
+        
+        .bot-config-name {
+            color: #e0e0e0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 500;
+        }
+        
+        .bot-ticker-name {
+            color: #00d4ff;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .bot-config-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .bot-config-status.valid {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+        
+        .bot-config-status.invalid {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .bot-config-details {
+            color: #888;
+            font-size: 0.85rem;
+            max-width: 300px;
+            word-break: break-word;
+        }
+        
+        .bot-config-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            background: #333;
+            border: 1px solid #444;
+            color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-small:hover {
+            background: #00d4ff;
+            border-color: #00d4ff;
+            color: #000;
+        }
+        
+        .btn-small.btn-start {
+            background: rgba(74, 222, 128, 0.15);
+            border-color: #4ade80;
+            color: #4ade80;
+        }
+        
+        .btn-small.btn-start:hover {
+            background: #4ade80;
+            border-color: #4ade80;
+            color: #000;
+        }
+        
+        .btn-small.btn-stop {
+            background: rgba(255, 107, 107, 0.15);
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        
+        .btn-small.btn-stop:hover {
+            background: #ff6b6b;
+            border-color: #ff6b6b;
+            color: #000;
+        }
+        
+        .btn-small.btn-logs {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .btn-small.btn-logs:hover {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #000;
+        }
+
+        /* =========================
+   Bot Config – Order Range style
+   ========================= */
+
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: transparent;
+        }
+
+        .config-table thead {
+            background: #1a1a1a;
+        }
+
+        .config-table th {
+            padding: 12px 12px;
+            text-align: left;
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #00d4ff;
+            white-space: nowrap;
+        }
+
+        .config-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid #2a2a2a;
+            color: #e0e0e0;
+            background: transparent !important;
+            font-family: 'Monaco', 'Menlo', monospace;
+            vertical-align: top;
+        }
+
+        .config-table tbody tr:nth-child(even) {
+            background: rgba(0, 0, 0, 0.15);
+        }
+
+        .config-table tbody tr:hover td {
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        /* Value helpers */
+        .config-muted {
+            color: #666;
+            font-style: italic;
+        }
+
+        .config-number {
+            color: #4ade80;
+        }
+
+        .config-boolean {
+            color: #fbbf24;
+        }
+
+        /* Nested indentation (NOT boxes) */
+        .config-nested {
+            border-left: 2px solid #333;
+            padding-left: 12px;
+            margin: 4px 0;
+        }
+
+        .log-container {
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 12px;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .log-line {
+            white-space: pre-wrap;
+            padding: 2px 6px;
+            border-left: 4px solid transparent;
+        }
+
+        /* Log levels */
+        .log-error {
+            color: #fecaca;
+            background: rgba(239, 68, 68, 0.08);
+            border-left-color: #ef4444;
+        }
+
+        .log-warning {
+            color: #fde68a;
+            background: rgba(245, 158, 11, 0.08);
+            border-left-color: #f59e0b;
+        }
+
+        .log-info {
+            color: #bfdbfe;
+            background: rgba(59, 130, 246, 0.08);
+            border-left-color: #3b82f6;
+        }
+
+        .log-debug {
+            color: #9ca3af;
+        }
+
+        .log-actions {
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }
+
+        .log-container {
+            background: #0f172a;
+            color: #e5e7eb;
+            font-family: monospace;
+            font-size: 13px;
+            padding: 12px;
+            max-height: 70vh;
+            overflow-y: auto;
+            border-radius: 6px;
+        }
+
+
+
     </style>
 </head>
 <body>
@@ -2047,6 +2346,7 @@
             <button class="tab-btn" data-tab="tickers" onclick="switchTab('tickers')">📈 Tickers</button>
             <button class="tab-btn" data-tab="token-management" onclick="switchTab('token-management')">🔐 Token Management</button>
             <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">📊 Order History</button>
+            <button class="tab-btn" data-tab="bot-manager" onclick="switchTab('bot-manager')">🤖 Bot Manager</button>
         </div>
         
         <!-- Positions Tab -->
@@ -2462,6 +2762,23 @@
             </div>
         </div>
         <!-- End Log Viewer Modal -->
+
+        <!-- Order Range Modal -->
+        <div id="order-range-modal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <h2>Order Range</h2>
+                    <button class="modal-close" onclick="closeOrderRangeModal()">✕</button>
+                </div>
+                <div class="modal-body" id="order-range-modal-body">
+                    <!-- Table will be injected here -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="closeOrderRangeModal()">Close</button>
+                </div>
+            </div>
+        </div>
+        <!-- End Order Range Modal -->
         
         <!-- Tickers Tab -->
         <div id="tickers-tab" class="tab-content">
@@ -2510,7 +2827,7 @@
                         <span class="tokens-stat-value" id="tokens-valid" style="color: #4ade80;">0</span>
                     </div>
                     <div class="tokens-stat-item">
-                        <span class="tokens-stat-label">Invalid</span>
+                        <span class="tokens-stat-label">Invalid token:</span>
                         <span class="tokens-stat-value" id="tokens-invalid" style="color: #ff6b6b;">0</span>
                     </div>
                 </div>
@@ -2524,9 +2841,66 @@
             </div>
         </div>
         <!-- End Token Management Tab -->
+        
+        <!-- Bot Manager Tab -->
+        <div id="bot-manager-tab" class="tab-content">
+            <div class="bot-manager-container">
+                <div class="bot-manager-filters">
+                    <h3>🤖 Bot Manager</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Strategy</label>
+                            <select id="bot-strategy" onchange="onBotStrategyChange()">
+                                <option value="">Select Strategy</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Broker</label>
+                            <select id="bot-broker" onchange="onBotBrokerChange()" disabled>
+                                <option value="">Select Broker</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Account</label>
+                            <select id="bot-account" onchange="onBotAccountChange()" disabled>
+                                <option value="">Select Account</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="bot-configs-container" style="display: none; margin-top: 30px;">
+                    <div class="table-scroll" id="bot-configs-table-container">
+                        <table class="bot-configs-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                    <th>Logs</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bot-configs-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="bot-empty-state" class="empty-state">
+                    <h3>No Configurations</h3>
+                    <p>Select Strategy → Broker → Account to view available configurations</p>
+                </div>
+            </div>
+        </div>
+        <!-- End Bot Manager Tab -->
     </div>
     
     <script>
+        let currentLogConfigPath = null;
+        let currentLogTicker = null;
+
         // Utility to get current filter values
         function getFilters() {
             // Get multiple selected values from checkbox dropdowns
@@ -4714,9 +5088,677 @@
             document.getElementById('redis-empty-state').innerHTML = '<h3>No Orders Loaded</h3><p>Select broker and account, then click "Load Orders" to view data</p>';
         }
         
+        // ============ Bot Manager Functions ============
+        
+        // Load all strategies on page load
+        async function loadBotStrategies() {
+            try {
+                const response = await fetchJSON('/api/bot/strategies');
+                if (response.success) {
+                    populateSelect('bot-strategy', response.strategies, 'Select Strategy');
+                }
+            } catch (error) {
+                console.error('Error loading bot strategies:', error);
+            }
+        }
+        
+        // When strategy changes, load brokers
+        async function onBotStrategyChange() {
+            const strategy = document.getElementById('bot-strategy').value;
+            const brokerSelect = document.getElementById('bot-broker');
+            const accountSelect = document.getElementById('bot-account');
+            const configsContainer = document.getElementById('bot-configs-container');
+            const emptyState = document.getElementById('bot-empty-state');
+            
+            brokerSelect.disabled = true;
+            accountSelect.disabled = true;
+            configsContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            if (!strategy) {
+                brokerSelect.innerHTML = '<option value="">Select Broker</option>';
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/brokers?strategy=${strategy}`);
+                if (response.success) {
+                    populateSelect('bot-broker', response.brokers, 'Select Broker');
+                    brokerSelect.disabled = false;
+                } else {
+                    console.error('Error loading brokers:', response.error);
+                }
+            } catch (error) {
+                console.error('Error loading bot brokers:', error);
+            }
+        }
+        
+        // When broker changes, load accounts
+        async function onBotBrokerChange() {
+            const strategy = document.getElementById('bot-strategy').value;
+            const broker = document.getElementById('bot-broker').value;
+            const accountSelect = document.getElementById('bot-account');
+            const configsContainer = document.getElementById('bot-configs-container');
+            const emptyState = document.getElementById('bot-empty-state');
+            
+            accountSelect.disabled = true;
+            configsContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            if (!strategy || !broker) {
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/accounts?strategy=${strategy}&broker=${broker}`);
+                if (response.success) {
+                    populateSelect('bot-account', response.accounts, 'Select Account');
+                    accountSelect.disabled = false;
+                } else {
+                    console.error('Error loading accounts:', response.error);
+                }
+            } catch (error) {
+                console.error('Error loading bot accounts:', error);
+            }
+        }
+        
+        // When account changes, load configs
+        async function onBotAccountChange() {
+            const strategy = document.getElementById('bot-strategy').value;
+            const broker = document.getElementById('bot-broker').value;
+            const account = document.getElementById('bot-account').value;
+            const configsContainer = document.getElementById('bot-configs-container');
+            const emptyState = document.getElementById('bot-empty-state');
+            const configsBody = document.getElementById('bot-configs-body');
+            
+            if (!strategy || !broker || !account) {
+                configsContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/configs?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (response.success) {
+                    if (response.configs.length === 0) {
+                        configsContainer.style.display = 'none';
+                        emptyState.style.display = 'block';
+                        emptyState.innerHTML = '<h3>No Configurations</h3><p>No config files found for this selection</p>';
+                    } else {
+                        configsContainer.style.display = 'block';
+                        emptyState.style.display = 'none';
+                        renderBotConfigs(response.configs, account);
+                    }
+                } else {
+                    console.error('Error loading configs:', response.error);
+                }
+            } catch (error) {
+                console.error('Error loading bot configs:', error);
+            }
+        }
+        
+        // Render bot configs in table
+        function renderBotConfigs(configs, account) {
+            const configsBody = document.getElementById('bot-configs-body');
+            
+            configsBody.innerHTML = configs.map(config => {
+                const hasError = !!config.error;
+                const ticker = config.name.split('_')[1]?.replace('.json', '') || 'N/A';
+                const status = hasError ? 'invalid' : 'valid';
+                const statusText = hasError ? 'Invalid JSON' : 'Valid';
+                
+                return `
+                    <tr>
+                        <td>
+                            <span class="bot-ticker-name">${ticker}</span>
+                        </td>
+                        <td>
+                            <span class="bot-config-status ${status}">
+                                ${status === 'valid' ? '✓' : '✕'} ${statusText}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="bot-config-actions">
+                                <button class="btn-small btn-start" onclick="startBot('${config.path}', '${ticker}')">Start</button>
+                                <button class="btn-small btn-stop" onclick="stopBot('${config.path}', '${ticker}')">Stop</button>
+                                <button class="btn-small" onclick="viewBotConfig('${config.path}', '${config.name}')">View Config</button>
+                                <button class="btn-small" onclick="viewOrderRange('${config.path}', '${ticker}')">View Order Range</button>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn-small btn-logs" onclick="viewBotLogs('${config.path}', '${ticker}')">View Logs</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // View bot config
+        async function viewBotConfig(path, name) {
+            console.log('View config:', path, name);
+            try {
+                const response = await fetchJSON(
+                    `/api/bot/config_details?config_path=${encodeURIComponent(path)}`
+                );
+                if (response.success && response.config) {
+                    // Create or reuse modal (match order range modal style)
+                    let modal = document.getElementById('bot-config-modal');
+                    if (!modal) {
+                        modal = document.createElement('div');
+                        modal.id = 'bot-config-modal';
+                        modal.className = 'modal';
+                        modal.innerHTML = `
+                                    <div class="modal-content">
+
+                                        <div class="modal-header">
+                                            <h2>⚙️ Bot Config — <span id="bot-config-title"></span></h2>
+                                            <button class="modal-close" id="bot-config-modal-close">&times;</button>
+                                        </div>
+
+                                        <div class="modal-info">
+                                            Configuration file details
+                                        </div>
+
+                                        <div class="modal-body" id="bot-config-table-container">
+                                            <!-- config table goes here -->
+                                        </div>
+
+                                        <div class="modal-footer">
+                                            <button class="btn btn-secondary" id="bot-config-close-btn">
+                                                Close
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                    `;
+
+                        document.body.appendChild(modal);
+
+                        document.getElementById('bot-config-modal-close').onclick =
+                        document.getElementById('bot-config-close-btn').onclick = () => {
+                            modal.style.display = 'none';
+                        };
+
+                        modal.onclick = (e) => {
+                            if (e.target === modal) modal.style.display = 'none';
+                        };
+                    } else {
+                        modal.style.display = 'flex';
+                    }
+                    // Update the title safely
+                    const titleElement = document.getElementById('bot-config-title');
+                    if (titleElement) {
+                        titleElement.textContent = name;
+                    }
+                    // Render table with the config content
+                    const tableContainer = document.getElementById('bot-config-table-container');
+                    tableContainer.innerHTML = renderConfigTable(response.config.content);
+                } else {
+                    throw new Error(response.error || 'Failed to load bot config');
+                }
+            } catch (error) {
+                console.error('Error viewing bot config:', error);
+                // Show user-friendly error message
+                let modal = document.getElementById('bot-config-modal');
+                modal.style.display = 'flex';
+
+                document.getElementById('bot-config-title').textContent = name;
+
+                const tableContainer = document.getElementById('bot-config-table-container');
+                tableContainer.innerHTML = `
+                    <div class="service-message error">
+                        <strong>Failed to load configuration</strong><br/>
+                        ${escapeHtml(error.message || 'Unexpected error')}
+                    </div>
+                `;
+
+            }
+        }
+
+        // Helper to render config object as table
+        function renderConfigTable(obj, parentKey = '') {
+            if (!obj || typeof obj !== 'object') {
+                return '<span class="config-muted">No config data</span>';
+            }
+
+            let html = `
+                <table class="config-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fullKey = parentKey ? `${parentKey}.${key}` : key;
+
+                html += `<tr>`;
+                html += `<td>${escapeHtml(fullKey)}</td>`;
+
+                /* ---------- VALUE RENDERING ---------- */
+
+                if (value === null || value === undefined) {
+                    html += `<td><span class="config-muted">${value}</span></td>`;
+
+                } else if (typeof value === 'number') {
+                    html += `<td><span class="config-number">${value}</span></td>`;
+
+                } else if (typeof value === 'boolean') {
+                    html += `<td><span class="config-boolean">${value}</span></td>`;
+
+                } else if (Array.isArray(value)) {
+                    html += `
+                        <td>
+                            ${value.length
+                                ? escapeHtml(value.join(', '))
+                                : '<span class="config-muted">empty</span>'}
+                        </td>
+                    `;
+
+                } else if (typeof value === 'object') {
+                    html += `
+                        <td>
+                            <div class="config-nested">
+                                ${renderConfigTable(value, fullKey)}
+                            </div>
+                        </td>
+                    `;
+
+                } else {
+                    html += `<td>${escapeHtml(String(value))}</td>`;
+                }
+
+                html += `</tr>`;
+            }
+
+            html += `</tbody></table>`;
+            return html;
+        }
+
+
+        // Helper to render nested objects as a compact table
+        function renderNestedConfigTable(obj) {
+            if (!obj || typeof obj !== 'object') return '<em style="color:#6b7280;">Invalid data</em>';
+            let html = '<table style="width:100%;border-collapse:collapse;margin:4px 0;background:#f9fafb;border-radius:4px;overflow:hidden;">';
+            
+            for (const [key, value] of Object.entries(obj)) {
+                html += '<tr>';
+                html += `<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;font-weight:500;width:40%;">${escapeHtml(key)}</td>`;
+                
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    html += `<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">${renderNestedConfigTable(value)}</td>`;
+                } else if (Array.isArray(value)) {
+                    html += `<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">${value.map(v => escapeHtml(String(v))).join(', ')}</td>`;
+                } else {
+                    let displayValue;
+
+                    if (value === null) {
+                        displayValue = '<span class="config-muted">null</span>';
+                    } else if (value === undefined) {
+                        displayValue = '<span class="config-muted">undefined</span>';
+                    } else if (typeof value === 'number') {
+                        displayValue = `<span class="config-number">${escapeHtml(String(value))}</span>`;
+                    } else if (typeof value === 'boolean') {
+                        displayValue = `<span class="config-boolean">${escapeHtml(String(value))}</span>`;
+                    } else {
+                        displayValue = escapeHtml(String(value));
+                    }
+
+                                        value === undefined ? '<em style="color:#6b7280;">undefined</em>' : 
+                                        typeof value === 'number' ? `<span style="color:#059669;font-weight:500;">${escapeHtml(String(value))}</span>` :
+                                        typeof value === 'boolean' ? `<span style="color:#dc2626;font-weight:500;">${escapeHtml(String(value))}</span>` :
+                                        escapeHtml(String(value));
+                    html += `<td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;">${displayValue}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+            return html;
+        }
+        // Edit bot config
+        
+        function editBotConfig(path, name) {
+            console.log('Edit config:', path, name);
+            alert('Edit functionality - Config: ' + name);
+        }
+        
+        // Start bot config
+        function startBot(path, ticker) {
+            console.log('Start bot:', ticker);
+            alert('Start Bot - Ticker: ' + ticker);
+        }
+        
+        // Stop bot config
+        function stopBot(path, ticker) {
+            console.log('Stop bot:', ticker);
+            alert('Stop Bot - Ticker: ' + ticker);
+        }
+        
+        function highlightLogLevels(logText) {
+            if (!logText) return "";
+
+            return logText
+                .split("\n")
+                .map(line => {
+                    let cssClass = "log-line";
+
+                    if (line.includes("| ERROR")) {
+                        cssClass += " log-error";
+                    } else if (line.includes("| WARNING")) {
+                        cssClass += " log-warning";
+                    } else if (line.includes("| INFO")) {
+                        cssClass += " log-info";
+                    } else if (line.includes("| DEBUG")) {
+                        cssClass += " log-debug";
+                    }
+
+                    // Escape HTML to avoid XSS
+                    const escaped = line
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;");
+
+                    return `<div class="${cssClass}">${escaped}</div>`;
+                })
+                .join("");
+        }
+
+            // View bot logs
+        async function viewBotLogs(path, ticker) {
+            currentLogConfigPath = path;
+            currentLogTicker = ticker;
+
+            // 🔑 This line fixes everything
+            const modal = ensureBotLogModalExists();
+            modal.style.display = "flex";
+
+            // Optional loading placeholder
+            document.getElementById("bot-log-content").innerHTML =
+                `<div class="log-line">Loading logs...</div>`;
+
+            // Now safe
+            await loadBotLogs();
+        }
+
+        async function loadBotLogs() {
+            if (!currentLogConfigPath) return;
+
+            try {
+                const response = await fetchJSON(
+                    `/api/bot/logs?config_path=${encodeURIComponent(currentLogConfigPath)}`
+                );
+
+                if (!response.success || !response.content) {
+                    throw new Error(response.error || "Failed to load bot logs");
+                }
+
+                // 1️⃣ Normalize to string
+                const logsText = Array.isArray(response.content)
+                    ? response.content.join('\n')
+                    : String(response.content);
+
+                // 2️⃣ Escape first (CRITICAL)
+                const safeLogs = escapeHtml(logsText);
+
+                // 3️⃣ Apply highlighting (returns HTML)
+                const logsHtml = highlightLogLevels(safeLogs);
+
+                // 4️⃣ Render
+                document.getElementById("bot-log-content").innerHTML = logsHtml;
+                document.getElementById("bot-log-title").textContent = currentLogTicker;
+
+                autoScrollLogs();
+
+            } catch (err) {
+                document.getElementById("bot-log-content").innerHTML =
+                    `<div class="log-error">ERROR: ${escapeHtml(err.message)}</div>`;
+            }
+     }
+        
+        function showBotLogModal(title, logs) {
+            let modal = document.getElementById('bot-log-modal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'bot-log-modal';
+                modal.className = 'modal';
+
+                modal.innerHTML = `
+                    <div class="modal-header">
+                        <h2>📄 Logs — <span id="bot-log-title"></span></h2>
+
+                        <div class="log-actions">
+                            <button class="btn btn-secondary" id="bot-log-refresh">
+                                🔄 Refresh
+                            </button>
+                            <button class="modal-close" id="bot-log-close">&times;</button>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                document.getElementById("bot-log-refresh").onclick = loadBotLogs;
+                document.getElementById("bot-log-close").onclick = closeBotLogModal;
+                document.getElementById("bot-log-close-btn").onclick = closeBotLogModal;
+
+
+                modal.onclick = e => {
+                    if (e.target === modal) modal.style.display = 'none';
+                };
+            }
+
+            document.getElementById('bot-log-title').textContent = title;
+            document.getElementById('bot-log-content').innerHTML = logs;
+
+            modal.style.display = 'flex';
+        }
+
+        function autoScrollLogs() {
+            const el = document.getElementById("bot-log-content");
+            if (el) el.scrollTop = el.scrollHeight;
+        }
+        
+        function closeBotLogModal() {
+            document.getElementById('bot-log-modal').style.display = 'none';
+        }
+
+        function showErrorModal(title, message) {
+            const modalBody = `
+                <div style="padding:16px;">
+                    <h3 style="color:#ff6b6b;margin-bottom:8px;">${title}</h3>
+                    <p>${message}</p>
+                </div>
+            `;
+
+            // Reuse same modal shell used for order range
+            const modal = document.getElementById('order-range-modal');
+            const modalContent = modal.querySelector('.modal-content');
+
+            modalContent.innerHTML = modalBody;
+            modal.style.display = 'block';
+        }
+
+        function ensureBotLogModalExists() {
+            let modal = document.getElementById("bot-log-modal");
+
+            if (modal) return modal;
+
+            modal = document.createElement("div");
+            modal.id = "bot-log-modal";
+            modal.className = "modal";
+
+            modal.innerHTML = `
+                <div class="modal-content log-modal">
+                    <div class="modal-header">
+                        <h2>📄 Logs — <span id="bot-log-title"></span></h2>
+                        <button class="modal-close" id="bot-log-close">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div id="bot-log-content" class="log-container"></div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="bot-log-refresh" title="Refresh logs">
+                        ⟳
+                        </button>
+                        <button class="btn btn-secondary" id="bot-log-close-btn">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            document.getElementById("bot-log-refresh").onclick = async () => {
+                const container = document.getElementById("bot-log-content");
+                if (container) {
+                    container.innerHTML =
+                        `<div class="log-line">Refreshing logs...</div>`;
+                }
+                await loadBotLogs();
+            };
+
+
+            document.getElementById("bot-log-close").onclick =
+            document.getElementById("bot-log-close-btn").onclick = () => {
+                modal.style.display = "none";
+            };
+
+            modal.onclick = e => {
+                if (e.target === modal) modal.style.display = "none";
+            };
+
+            return modal;
+        }
+
+        // View order range
+        async function viewOrderRange(path, ticker) {
+            try {
+                const response = await fetchJSON(
+                    `/api/bot/order_range?config_path=${encodeURIComponent(path)}`
+                );
+
+                if (response.success && response.order_ranges) {
+                    showOrderRangeModal(response.order_ranges, ticker);
+                    
+                } else {
+                    throw new Error(response.error || 'Failed to view order range');
+                }
+
+            } catch (error) {
+                console.error('Error viewing order range:', error);
+
+                showErrorModal(
+                    `Order Range Error (${ticker})`,
+                    error.message || 'Unable to fetch order range. Please try again.'
+                );
+            }
+        }
+
+
+        function showOrderRangeModal(orderRanges, ticker) {
+            const modal = document.getElementById('order-range-modal');
+            const body = document.getElementById('order-range-modal-body');
+            body.innerHTML = renderOrderRangeTable(orderRanges, ticker);
+            modal.style.display = 'flex';
+        }
+
+        function closeOrderRangeModal() {
+            document.getElementById('order-range-modal').style.display = 'none';
+        }
+
+        function renderOrderRangeTable(orderRanges, ticker) {
+            if (!orderRanges) return '<p>No data available.</p>';
+            let html = '';
+            // Config summary table
+            if (orderRanges.config && Object.keys(orderRanges.config).length) {
+                html += '<h4 style="margin-bottom:6px;">Config Parameters</h4>';
+                html += '<table style="border-collapse:collapse;margin-bottom:16px;">';
+
+                // Header row (keys)
+                html += '<tr>';
+                for (const key of Object.keys(orderRanges.config)) {
+                    html += `<th style="padding:4px 10px;text-align:left;">${key}</th>`;
+                }
+                html += '</tr>';
+
+                // Value row
+                html += '<tr>';
+                for (const value of Object.values(orderRanges.config)) {
+                    html += `<td style="padding:4px 10px;">${value}</td>`;
+                }
+                html += '</tr>';
+
+                html += '</table>';
+        }
+
+            // Buy Table
+            if (orderRanges.buy && Object.keys(orderRanges.buy).length > 0) {
+                html += '<h4 style="color:#4ade80;">Buy Orders</h4>';
+                html += '<table style="width:100%;margin-bottom:16px;border-collapse:collapse;">';
+                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th></tr></thead><tbody>';
+                let buyRows = [];
+                for (const tickerKey in orderRanges.buy) {
+                    let [index, tickerName] = tickerKey.split(":");
+                    const priceMap = orderRanges.buy[tickerKey];
+                    for (const price in priceMap) {
+                        const row = priceMap[price];
+                        buyRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET});
+                    }
+                }
+                // Sort buy orders descending by price
+                buyRows.sort((a, b) => b.price - a.price);
+                let totalQty = 0, totalTarget = 0;
+                for (const row of buyRows) {
+                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td></tr>`;
+                    totalQty += Number(row.QTY);
+                    totalTarget += Number(row.TARGET);
+                }
+                // Totals row
+                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td></tr>`;
+                html += '</tbody></table>';
+            }
+            // Sell Table
+            if (orderRanges.sell && Object.keys(orderRanges.sell).length > 0) {
+                html += '<h4 style="color:#ff6b6b;">Sell Orders</h4>';
+                html += '<table style="width:100%;margin-bottom:16px;border-collapse:collapse;">';
+                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th></tr></thead><tbody>';
+                let sellRows = [];
+                for (const tickerKey in orderRanges.sell) {
+                    let [index, tickerName] = tickerKey.split(":");
+                    const priceMap = orderRanges.sell[tickerKey];
+                    for (const price in priceMap) {
+                        const row = priceMap[price];
+                        sellRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET});
+                    }
+                }
+                // Sort sell orders ascending by price
+                sellRows.sort((a, b) => a.price - b.price);
+                let totalQty = 0, totalTarget = 0;
+                for (const row of sellRows) {
+                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td></tr>`;
+                    totalQty += Number(row.QTY);
+                    totalTarget += Number(row.TARGET);
+                }
+                // Totals row
+                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td></tr>`;
+                html += '</tbody></table>';
+            }
+            return html;
+        }
+        
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadAllPositions();
+            loadBotStrategies();
         });
     </script>
 </body>
