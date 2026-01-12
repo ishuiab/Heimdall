@@ -2179,7 +2179,31 @@
             border-color: #4ade80;
             color: #000;
         }
-        
+
+        .btn-small.btn-view-config {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .btn-small.btn-view-config:hover {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: #000;
+        }
+
+        .btn-small.btn-view-range {
+            background: rgba(168, 85, 247, 0.15);
+            border-color: #a855f7;
+            color: #a855f7;
+        }
+
+        .btn-small.btn-view-range:hover {
+            background: #a855f7;
+            border-color: #a855f7;
+            color: #000;
+        }
+
         .btn-small.btn-stop {
             background: rgba(255, 107, 107, 0.15);
             border-color: #ff6b6b;
@@ -2204,9 +2228,384 @@
             color: #000;
         }
 
+        .btn-small.btn-view-logs {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        .btn-small.btn-view-logs:hover {
+            background: #fbbf24;
+            border-color: #fbbf24;
+            color: #000;
+        }
+
         /* =========================
-   Bot Config – Order Range style
+   Config Manager Tab Styles
    ========================= */
+
+        .config-manager-container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .config-manager-filters {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .config-manager-filters h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .config-contents-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            table-layout: auto;
+        }
+
+        .config-contents-table thead {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(100, 150, 255, 0.1) 100%);
+            z-index: 10;
+        }
+
+        .config-contents-table th {
+            padding: 6px 6px;
+            text-align: center;
+            color: #00d4ff;
+            font-weight: 600;
+            border-bottom: 2px solid #00d4ff;
+            white-space: nowrap;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            overflow: hidden;
+        }
+
+        .config-contents-table th:first-child {
+            text-align: left;
+        }
+
+        .config-contents-table td {
+            padding: 5px 6px;
+            border-bottom: 1px solid #333;
+            vertical-align: middle;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .config-contents-table td:first-child {
+            text-align: left;
+        }
+
+        .config-contents-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.08);
+        }
+
+        /* Column width adjustments - compact data columns, expand actions */
+        .config-contents-table th:nth-child(1),
+        .config-contents-table td:nth-child(1) {
+            width: 70px;
+            max-width: 70px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .config-contents-table th:nth-child(2),
+        .config-contents-table td:nth-child(2) {
+            width: 50px;
+            max-width: 50px;
+        }
+
+        .config-contents-table th:nth-child(3),
+        .config-contents-table td:nth-child(3) {
+            width: 50px;
+            max-width: 50px;
+        }
+
+        .config-contents-table th:nth-child(4),
+        .config-contents-table td:nth-child(4) {
+            width: 80px;
+            max-width: 80px;
+        }
+
+        .config-contents-table th:nth-child(5),
+        .config-contents-table td:nth-child(5) {
+            width: 70px;
+            max-width: 70px;
+        }
+
+        /* Actions column - takes remaining space */
+        .config-contents-table th:last-child,
+        .config-contents-table td:last-child {
+            width: auto;
+            white-space: nowrap;
+        }
+
+
+        .cm-key {
+            color: #00d4ff;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 600;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .cm-value {
+            color: #e0e0e0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .cm-value.string { color: #10b981; }
+        .cm-value.number { color: #f59e0b; }
+        .cm-value.boolean { color: #ef4444; }
+        .cm-value.null { color: #6b7280; }
+        .cm-value.array { color: #8b5cf6; }
+
+        .cm-config-name {
+            color: #f0f0f0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-weight: 600;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            background: rgba(0, 212, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .cm-config-value {
+            color: #e0e0e0;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .cm-config-value.missing {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* Highlighted value types */
+        .cm-value-etf {
+            color: #a78bfa;
+            font-weight: 600;
+            background: rgba(167, 139, 250, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .cm-value-ltp {
+            color: #fbbf24;
+            font-weight: 600;
+            background: rgba(251, 191, 36, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .cm-value-asset {
+            color: #34d399;
+            font-weight: 500;
+            background: rgba(52, 211, 153, 0.12);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .cm-value-margin {
+            color: #f87171;
+            font-weight: 500;
+            background: rgba(248, 113, 113, 0.12);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .cm-update-btn {
+            padding: 2px 5px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid #f59e0b;
+            border-radius: 3px;
+            background: linear-gradient(135deg, #f59e0b20 0%, #f59e0b10 100%);
+            color: #f59e0b;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-right: 6px;
+        }
+
+        .cm-update-btn:hover {
+            background: linear-gradient(135deg, #f59e0b40 0%, #f59e0b25 100%);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .cm-update-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 0 5px rgba(245, 158, 11, 0.3);
+        }
+
+        .cm-view-btn {
+            padding: 2px 5px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid #8b5cf6;
+            border-radius: 3px;
+            background: linear-gradient(135deg, #8b5cf620 0%, #8b5cf610 100%);
+            color: #8b5cf6;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            margin-right: 6px;
+        }
+
+        .cm-view-btn:hover {
+            background: linear-gradient(135deg, #8b5cf640 0%, #8b5cf625 100%);
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .cm-view-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
+        }
+
+        .cm-action-separator {
+            width: 1px;
+            height: 14px;
+            background: #555;
+            margin: 0 1px;
+        }
+
+        .cm-update-all-btn {
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid #f59e0b;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #f59e0b25 0%, #f59e0b15 100%);
+            color: #f59e0b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .cm-update-all-btn:hover {
+            background: linear-gradient(135deg, #f59e0b45 0%, #f59e0b30 100%);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .cm-update-all-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+        }
+
+        /* Bulk update footer styling */
+        .cm-bulk-update-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 18px 25px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #252525 100%);
+            border-radius: 10px;
+            border: 1.5px solid #f59e0b;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+        }
+
+        .cm-bulk-update-footer .footer-title {
+            margin: 0;
+            color: #f59e0b;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cm-bulk-update-footer .footer-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .cm-refresh-btn {
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1.5px solid #00d4ff;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #00d4ff25 0%, #00d4ff15 100%);
+            color: #00d4ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .cm-refresh-btn:hover {
+            background: linear-gradient(135deg, #00d4ff45 0%, #00d4ff30 100%);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .cm-refresh-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+                /* ============================
+        FIX VIEW COLUMN LAYOUT
+        ============================ */
+
+        /* Force minimum width for View column */
+        .config-contents-table th:last-child,
+        .config-contents-table td:last-child {
+            width: 190px;          /* slightly bigger than before */
+            min-width: 190px;
+        }
+
+        /* Ensure flex container does not shrink */
+        .cm-row-view-cell {
+            display: flex;
+            gap: 6px;              /* slightly more breathing room */
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+            overflow: visible;    /* prevent clipping */
+        }
+
+        /* Prevent buttons from shrinking or wrapping */
+        .cm-view-btn {
+            flex-shrink: 0;
+            white-space: nowrap;
+            min-width: 70px;       /* stabilizes layout */
+        }
+
+        .cm-row-action-cell {
+
+            gap: 8px;
+        }
+
+        /* =========================
+        Bot Config – Order Range style
+        ========================= */
 
         .config-table {
             width: 100%;
@@ -2325,6 +2724,22 @@
             border-radius: 6px;
         }
 
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #111;
+            color: #fff;
+            padding: 12px 18px;
+            border-radius: 6px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 9999;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
 
 
     </style>
@@ -2336,6 +2751,7 @@
             <span>Order Viewer & Config Manager</span>
         </header>
         
+        <div id="toast" class="toast"></div>
         <!-- Tab Navigation -->
         <div class="tabs">
             <button class="tab-btn active" data-tab="positions" onclick="switchTab('positions')">📋 Positions</button>
@@ -2347,6 +2763,7 @@
             <button class="tab-btn" data-tab="token-management" onclick="switchTab('token-management')">🔐 Token Management</button>
             <button class="tab-btn" data-tab="orders" onclick="switchTab('orders')">📊 Order History</button>
             <button class="tab-btn" data-tab="bot-manager" onclick="switchTab('bot-manager')">🤖 Bot Manager</button>
+            <button class="tab-btn" data-tab="config-manager" onclick="switchTab('config-manager')">📁 Config Manager</button>
         </div>
         
         <!-- Positions Tab -->
@@ -2846,7 +3263,10 @@
         <div id="bot-manager-tab" class="tab-content">
             <div class="bot-manager-container">
                 <div class="bot-manager-filters">
-                    <h3>🤖 Bot Manager</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>🤖 Bot Manager</h3>
+                        <button class="btn btn-primary" onclick="refreshBotConfigs()" style="padding: 10px 20px; font-size: 0.95rem;">🔄 Refresh</button>
+                    </div>
                     <div class="filter-row">
                         <div class="filter-group">
                             <label>Strategy</label>
@@ -2877,8 +3297,10 @@
                             <thead>
                                 <tr>
                                     <th>Ticker</th>
-                                    <th>Status</th>
+                                    <th>Config Status</th>
+                                    <th>Hearbeat</th>
                                     <th>Actions</th>
+                                    <th>Margin Needed</th>
                                     <th>Logs</th>
                                 </tr>
                             </thead>
@@ -2895,6 +3317,81 @@
             </div>
         </div>
         <!-- End Bot Manager Tab -->
+        
+        <!-- Config Manager Tab -->
+        <div id="config-manager-tab" class="tab-content">
+            <div class="config-manager-container">
+                <div class="config-manager-filters">
+                    <h3>📁 Config Manager</h3>
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Strategy</label>
+                            <select id="cm-strategy" onchange="onCMStrategyChange()">
+                                <option value="">Select Strategy</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Broker</label>
+                            <select id="cm-broker" onchange="onCMBrokerChange()" disabled>
+                                <option value="">Select Broker</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Account</label>
+                            <select id="cm-account" onchange="onCMAccountChange()" disabled>
+                                <option value="">Select Account</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cm-config-contents" style="display: none; margin-top: 30px;">
+                    <div class="table-scroll" id="cm-contents-container">
+                        <table class="config-contents-table">
+                            <thead>
+                                <tr>
+                                    <th>Ticker</th>
+                                    <th>ETF</th>
+                                    <th>LTP</th>
+                                    <th>Asset</th>
+                                    <th>Margin Needed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cm-contents-body">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Update All Buttons Footer -->
+                    <div id="cm-update-footer" class="cm-bulk-update-footer" style="display: none;">
+                        <p class="footer-title">⚡ Bulk Update All Configs</p>
+                        <div class="footer-buttons">
+                            <button class="cm-update-all-btn" onclick="updateAllLTP()" title="Update LTP for all configs">
+                                📊 Update All LTP
+                            </button>
+                            <button class="cm-update-all-btn" onclick="updateAllOpen()" title="Update Open prices for all configs">
+                                🌅 Update All Open
+                            </button>
+                            <button class="cm-update-all-btn" onclick="updateAllClose()" title="Update Close prices for all configs">
+                                🌙 Update All Close
+                            </button>
+                            <button class="cm-refresh-btn" onclick="onCMAccountChange()" title="Refresh table data from JSON files">
+                                🔄 Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cm-empty-state" class="empty-state">
+                    <h3>No Configuration</h3>
+                    <p>Select Strategy → Broker → Account to view all config files and their details</p>
+                </div>
+            </div>
+        </div>
+        <!-- End Config Manager Tab -->
     </div>
     
     <script>
@@ -5189,7 +5686,7 @@
                     } else {
                         configsContainer.style.display = 'block';
                         emptyState.style.display = 'none';
-                        renderBotConfigs(response.configs, account);
+                        renderBotConfigs(response.configs, account, strategy, broker);
                     }
                 } else {
                     console.error('Error loading configs:', response.error);
@@ -5199,15 +5696,52 @@
             }
         }
         
+        // Refresh bot configs (reload current selection)
+        async function refreshBotConfigs() {
+            const strategy = document.getElementById('bot-strategy').value;
+            const broker = document.getElementById('bot-broker').value;
+            const account = document.getElementById('bot-account').value;
+            
+            if (!strategy || !broker || !account) {
+                alert('Please select Strategy, Broker, and Account first');
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/configs?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (response.success) {
+                    if (response.configs.length === 0) {
+                        const configsContainer = document.getElementById('bot-configs-container');
+                        const emptyState = document.getElementById('bot-empty-state');
+                        configsContainer.style.display = 'none';
+                        emptyState.style.display = 'block';
+                        emptyState.innerHTML = '<h3>No Configurations</h3><p>No config files found for this selection</p>';
+                    } else {
+                        renderBotConfigs(response.configs, account, strategy, broker);
+                    }
+                    console.log('Bot configs refreshed successfully');
+                } else {
+                    alert('Error refreshing configs: ' + response.error);
+                    console.error('Error refreshing configs:', response.error);
+                }
+            } catch (error) {
+                alert('Error refreshing configs');
+                console.error('Error refreshing bot configs:', error);
+            }
+        }
+        
         // Render bot configs in table
-        function renderBotConfigs(configs, account) {
+        function renderBotConfigs(configs, account, strategy, broker) {
             const configsBody = document.getElementById('bot-configs-body');
             
             configsBody.innerHTML = configs.map(config => {
-                const hasError = !!config.error;
-                const ticker = config.name.split('_')[1]?.replace('.json', '') || 'N/A';
-                const status = hasError ? 'invalid' : 'valid';
-                const statusText = hasError ? 'Invalid JSON' : 'Valid';
+                const hasError    = !!config.error;
+                const ticker      = config.name.split('_')[1]?.replace('.json', '') || 'N/A';
+                const status      = hasError ? 'invalid' : 'valid';
+                const statusText  = hasError ? 'Invalid JSON' : 'Valid';
+                const heartbeat = Boolean(config.heartbeat);
+                const heartbeatStatus = heartbeat ? 'valid' : 'invalid';
+
                 
                 return `
                     <tr>
@@ -5220,15 +5754,23 @@
                             </span>
                         </td>
                         <td>
+                            <span class="bot-config-status ${heartbeatStatus}">
+                                ${heartbeatStatus === 'valid' ? '✓' : '✕'} Heartbeat
+                            </span>
+                        </td>
+                        <td>
                             <div class="bot-config-actions">
-                                <button class="btn-small btn-start" onclick="startBot('${config.path}', '${ticker}')">Start</button>
-                                <button class="btn-small btn-stop" onclick="stopBot('${config.path}', '${ticker}')">Stop</button>
-                                <button class="btn-small" onclick="viewBotConfig('${config.path}', '${config.name}')">View Config</button>
-                                <button class="btn-small" onclick="viewOrderRange('${config.path}', '${ticker}')">View Order Range</button>
+                                <button class="btn-small btn-start" onclick="startBot('${config.path}', '${ticker}', '${account}', '${strategy}', '${broker}')">Start</button>
+                                <button class="btn-small btn-stop" onclick="stopBot('${config.path}', '${ticker}', '${account}', '${strategy}', '${broker}')">Stop</button>
+                                <button class="btn-small btn-view-config" onclick="viewBotConfig('${config.path}', '${config.name}')">View Config</button>
+                                <button class="btn-small btn-view-range" onclick="viewOrderRange('${config.path}', '${ticker}')">View Order Range</button>
                             </div>
                         </td>
                         <td>
-                            <button class="btn-small btn-logs" onclick="viewBotLogs('${config.path}', '${ticker}')">View Logs</button>
+                            <span class="bot-margin-needed">₹ ${config.margin_needed ? parseFloat(config.margin_needed).toFixed(2) : '0.00'}</span>
+                        </td>
+                        <td>
+                            <button class="btn-small btn-view-logs" onclick="viewBotLogs('${config.path}', '${ticker}')">View Logs</button>
                         </td>
                     </tr>
                 `;
@@ -5380,7 +5922,6 @@
             return html;
         }
 
-
         // Helper to render nested objects as a compact table
         function renderNestedConfigTable(obj) {
             if (!obj || typeof obj !== 'object') return '<em style="color:#6b7280;">Invalid data</em>';
@@ -5428,17 +5969,83 @@
         }
         
         // Start bot config
-        function startBot(path, ticker) {
-            console.log('Start bot:', ticker);
-            alert('Start Bot - Ticker: ' + ticker);
-        }
+        async function startBot(path, ticker, account, strategy, broker) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "Starting...";
+
+            try {
+                const response = await fetch('/api/bot/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        config_path: path,
+                        ticker,
+                        account,
+                        strategy,
+                        broker
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showToast(`❌ ${data.error}`);
+                    return;
+                }
+                showToast(`✅ Bot started: ${ticker}`);
+                //sleep for 5 seconds to allow bot to initialize
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                onBotAccountChange();   // Refresh only on success
+
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Network / server error while starting bot');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Start";
+            }
+    }
+
+        // Stop bot config (non-blocking UX)
+        async function stopBot(path, ticker, account, strategy, broker) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "Stopping...";
+
+            try {
+                const response = await fetch('/api/bot/stop', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ticker,
+                        account,
+                        strategy,
+                        broker
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showToast(`❌ ${data.error}`);
+                    return;
+                }
+
+                showToast(`🛑 Bot stopped: ${ticker}`);
+                onBotAccountChange();   // Refresh only after success
+
+            } catch (err) {
+                console.error(err);
+                showToast('❌ Network / server error while stopping bot');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Stop";
+            }
+    }
+
         
-        // Stop bot config
-        function stopBot(path, ticker) {
-            console.log('Stop bot:', ticker);
-            alert('Stop Bot - Ticker: ' + ticker);
-        }
-        
+        // ============ Bot Logs Functions ============
         function highlightLogLevels(logText) {
             if (!logText) return "";
 
@@ -5456,7 +6063,6 @@
                     } else if (line.includes("| DEBUG")) {
                         cssClass += " log-debug";
                     }
-
                     // Escape HTML to avoid XSS
                     const escaped = line
                         .replace(/&/g, "&amp;")
@@ -5468,7 +6074,7 @@
                 .join("");
         }
 
-            // View bot logs
+        // View bot logs
         async function viewBotLogs(path, ticker) {
             currentLogConfigPath = path;
             currentLogTicker = ticker;
@@ -5663,7 +6269,6 @@
             }
         }
 
-
         function showOrderRangeModal(orderRanges, ticker) {
             const modal = document.getElementById('order-range-modal');
             const body = document.getElementById('order-range-modal-body');
@@ -5680,20 +6285,39 @@
             let html = '';
             // Config summary table
             if (orderRanges.config && Object.keys(orderRanges.config).length) {
+                const layout = {
+                    ETF: ["ETF Close", "ETF FMV"],
+                    Margin: ["Margin Buy", "Margin Sell"],
+                    Max: ["Max Buy", "Max Sell"],
+                    Start: ["Start Buy", "Start Sell"]
+                };
+
                 html += '<h4 style="margin-bottom:6px;">Config Parameters</h4>';
                 html += '<table style="border-collapse:collapse;margin-bottom:16px;">';
 
                 // Header row (keys)
                 html += '<tr>';
-                for (const key of Object.keys(orderRanges.config)) {
-                    html += `<th style="padding:4px 10px;text-align:left;">${key}</th>`;
+                        for (const group in layout) {
+                            html += `
+                                <th colspan="${layout[group].length}"
+                                    style="padding:4px 10px;text-align:center;font-weight:600;">
+                                    ${group}
+                                </th>`;
+                        }
+                html += '</tr>';
+                /* ───── Row 2: Sub headers ───── */
+                html += '<tr>';
+                for (const group in layout) {
+                    layout[group].forEach(key => {
+                        const sub = key.split(' ').pop(); // Close / FMV / Buy / Sell
+                        html += `<th style="padding:4px 10px;text-align:center;">${sub}</th>`;
+                    });
                 }
                 html += '</tr>';
-
                 // Value row
                 html += '<tr>';
                 for (const value of Object.values(orderRanges.config)) {
-                    html += `<td style="padding:4px 10px;">${value}</td>`;
+                    html += `<td style="padding:4px 10px;text-align:center;">${value}</td>`;
                 }
                 html += '</tr>';
 
@@ -5704,61 +6328,527 @@
             if (orderRanges.buy && Object.keys(orderRanges.buy).length > 0) {
                 html += '<h4 style="color:#4ade80;">Buy Orders</h4>';
                 html += '<table style="width:100%;margin-bottom:16px;border-collapse:collapse;">';
-                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th></tr></thead><tbody>';
+                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th><th>Total</th><th>Margin</th></tr></thead><tbody>';
                 let buyRows = [];
                 for (const tickerKey in orderRanges.buy) {
                     let [index, tickerName] = tickerKey.split(":");
                     const priceMap = orderRanges.buy[tickerKey];
                     for (const price in priceMap) {
-                        const row = priceMap[price];
-                        buyRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET});
+                        const row       = priceMap[price];
+                        const qty       = Number(row.QTY);
+                        const priceNum  = Number(price);
+                        const total     = qty * priceNum;
+                        const margin    = total * 0.20;
+                        buyRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET, TOTAL: total.toFixed(2), MARGIN: margin.toFixed(2)});
                     }
                 }
                 // Sort buy orders descending by price
                 buyRows.sort((a, b) => b.price - a.price);
-                let totalQty = 0, totalTarget = 0;
+                let totalQty = 0, totalTarget = 0, totalMargin = 0;totalCost = 0;
                 for (const row of buyRows) {
-                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td></tr>`;
-                    totalQty += Number(row.QTY);
+                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td><td>${row.TOTAL}</td><td style="color:#4ade80;">${row.MARGIN}</td></tr>`;
+                    totalQty    += Number(row.QTY);
                     totalTarget += Number(row.TARGET);
+                    totalMargin += Number(row.MARGIN);
+                    totalCost   += Number(row.TOTAL);
                 }
                 // Totals row
-                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td></tr>`;
+                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td><td>${totalCost.toFixed(2)}</td><td style="color:#4ade80;">${totalMargin.toFixed(2)}</td></tr>`;
                 html += '</tbody></table>';
             }
             // Sell Table
             if (orderRanges.sell && Object.keys(orderRanges.sell).length > 0) {
                 html += '<h4 style="color:#ff6b6b;">Sell Orders</h4>';
                 html += '<table style="width:100%;margin-bottom:16px;border-collapse:collapse;">';
-                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th></tr></thead><tbody>';
+                html += '<thead><tr><th>Index</th><th>Ticker</th><th>Price</th><th>Qty</th><th>Target</th><th>Total</th><th>Margin</th></tr></thead><tbody>';
                 let sellRows = [];
                 for (const tickerKey in orderRanges.sell) {
                     let [index, tickerName] = tickerKey.split(":");
                     const priceMap = orderRanges.sell[tickerKey];
                     for (const price in priceMap) {
                         const row = priceMap[price];
-                        sellRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET});
+                        const qty       = Number(row.QTY);
+                        const priceNum  = Number(price);
+                        const total     = qty * priceNum;
+                        const margin    = total * 0.20;
+                        sellRows.push({index, tickerName: tickerName || tickerKey, price: parseFloat(price), QTY: row.QTY, TARGET: row.TARGET, TOTAL: total.toFixed(2), MARGIN: margin.toFixed(2)});
                     }
                 }
                 // Sort sell orders ascending by price
                 sellRows.sort((a, b) => a.price - b.price);
-                let totalQty = 0, totalTarget = 0;
+                let totalQty = 0, totalTarget = 0; totalMargin = 0; totalCost = 0;
                 for (const row of sellRows) {
-                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td></tr>`;
-                    totalQty += Number(row.QTY);
+                    html += `<tr><td>${row.index || ''}</td><td>${row.tickerName}</td><td>${row.price}</td><td>${row.QTY}</td><td>${row.TARGET}</td><td>${row.TOTAL}</td><td style="color:#ff6b6b;">${row.MARGIN}</td></tr>`;
+                    totalQty    += Number(row.QTY);
                     totalTarget += Number(row.TARGET);
+                    totalMargin += Number(row.MARGIN);
+                    totalCost   += Number(row.TOTAL);
                 }
                 // Totals row
-                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td></tr>`;
+                html += `<tr style="font-weight:bold;"><td colspan="3">Total</td><td>${totalQty}</td><td></td><td>${totalCost.toFixed(2)}</td><td style="color:#ff6b6b;">${totalMargin.toFixed(2)}</td></tr>`;
                 html += '</tbody></table>';
             }
             return html;
         }
         
+        // ============ Config Manager Functions ============
+        
+        // Load all strategies on page load
+        async function loadCMStrategies() {
+            try {
+                const response = await fetchJSON('/api/bot/strategies');
+                if (response.success) {
+                    populateSelect('cm-strategy', response.strategies, 'Select Strategy');
+                }
+            } catch (error) {
+                console.error('Error loading config manager strategies:', error);
+            }
+        }
+        
+        // When strategy changes, load brokers
+        async function onCMStrategyChange() {
+            const strategy = document.getElementById('cm-strategy').value;
+            const brokerSelect = document.getElementById('cm-broker');
+            const accountSelect = document.getElementById('cm-account');
+            const contentsContainer = document.getElementById('cm-config-contents');
+            const emptyState = document.getElementById('cm-empty-state');
+            
+            brokerSelect.disabled = true;
+            accountSelect.disabled = true;
+            contentsContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            if (!strategy) {
+                brokerSelect.innerHTML = '<option value="">Select Broker</option>';
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/brokers?strategy=${strategy}`);
+                if (response.success) {
+                    populateSelect('cm-broker', response.brokers, 'Select Broker');
+                    brokerSelect.disabled = false;
+                } else {
+                    console.error('Error loading brokers:', response.error);
+                }
+            } catch (error) {
+                console.error('Error loading config manager brokers:', error);
+            }
+        }
+        
+        // When broker changes, load accounts
+        async function onCMBrokerChange() {
+            const strategy = document.getElementById('cm-strategy').value;
+            const broker = document.getElementById('cm-broker').value;
+            const accountSelect = document.getElementById('cm-account');
+            const contentsContainer = document.getElementById('cm-config-contents');
+            const emptyState = document.getElementById('cm-empty-state');
+            
+            accountSelect.disabled = true;
+            contentsContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+            
+            if (!strategy || !broker) {
+                accountSelect.innerHTML = '<option value="">Select Account</option>';
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/accounts?strategy=${strategy}&broker=${broker}`);
+                if (response.success) {
+                    populateSelect('cm-account', response.accounts, 'Select Account');
+                    accountSelect.disabled = false;
+                } else {
+                    console.error('Error loading accounts:', response.error);
+                }
+            } catch (error) {
+                console.error('Error loading config manager accounts:', error);
+            }
+        }
+        
+        // When account changes, load ALL config files and display their key fields
+        async function onCMAccountChange() {
+            const strategy          = document.getElementById('cm-strategy').value;
+            const broker            = document.getElementById('cm-broker').value;
+            const account           = document.getElementById('cm-account').value;
+            const contentsContainer = document.getElementById('cm-config-contents');
+            const emptyState        = document.getElementById('cm-empty-state');
+            
+            if (!strategy || !broker || !account) {
+                contentsContainer.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            try {
+                // Load all config files for this account
+                const response = await fetchJSON(`/api/bot/configs?strategy=${strategy}&broker=${broker}&account=${account}`);
+                
+                if (response.success && response.configs.length > 0) {
+                    // Render all configs in table format with extracted fields
+                    renderCMAllConfigs(response.configs,strategy,broker,account);
+                    contentsContainer.style.display = 'block';
+                    emptyState.style.display = 'none';
+                } else {
+                    emptyState.style.display = 'block';
+                    contentsContainer.style.display = 'none';
+                    emptyState.innerHTML = '<h3>No Config Files</h3><p>No configuration files found for this selection</p>';
+                }
+            } catch (error) {
+                console.error('Error loading config contents:', error);
+                emptyState.style.display = 'block';
+                contentsContainer.style.display = 'none';
+                emptyState.innerHTML = `<h3>Error Loading Configs</h3><p>${escapeHtml(error.message)}</p>`;
+            }
+        }
+        
+        // Render all configs with extracted fields
+        function renderCMAllConfigs(configs,strategy,broker,account) {
+            const tbody = document.getElementById('cm-contents-body');
+            const footer = document.getElementById('cm-update-footer');
+            tbody.innerHTML = '';
+            
+            configs.forEach(config => {
+                const row = document.createElement('tr');
+                
+                // Extract Ticker from config file name (e.g., "1109120000_MON100.json" -> "MON100")
+                const ticker = extractTickerFromFileName(config.name);
+                const nameCell = document.createElement('td');
+                nameCell.className = 'cm-config-name';
+                nameCell.textContent = ticker;
+                row.appendChild(nameCell);
+                
+                // Extract and display ETF, Asset (Open/Close), Margin (Buy/Sell)
+                if (config.error) {
+                    // If config has error, show error for all fields
+                    const errorMsg = 'Error: Invalid JSON';
+                    for (let i = 0; i < 4; i++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'cm-config-value missing';
+                        cell.textContent = errorMsg;
+                        row.appendChild(cell);
+                    }
+                    // Add empty action cell for error rows
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'cm-config-value';
+                    actionCell.textContent = '-';
+                    row.appendChild(actionCell);
+                } else if (config.content) {
+                    // Extract ETF
+                    const etf     = extractFieldFromConfig(config.content, 'ETF');
+                    const etfCell = document.createElement('td');
+                    if (etf) {
+                        etfCell.className = 'cm-value-etf';
+                        etfCell.textContent = etf;
+                    } else {
+                        etfCell.className = 'cm-config-value missing';
+                        etfCell.textContent = 'N/A';
+                    }
+                    row.appendChild(etfCell);
+                    
+                    // LTP (Last Traded Price) - placeholder for now
+                    const tickerLTP = config.LTP || 0; // Assuming LTP is part of config object
+                    const ltpCell = document.createElement('td');
+                    ltpCell.className = 'cm-value-ltp';
+                    ltpCell.textContent = tickerLTP;
+                    row.appendChild(ltpCell);
+                    
+                    // Extract Asset Open and Close (combined)
+                    const assetOpen  = extractFieldFromConfig(config.content, 'Asset Open');
+                    const assetClose = extractFieldFromConfig(config.content, 'Asset Close');
+                    const assetCell = document.createElement('td');
+                    if (assetOpen && assetClose) {
+                        assetCell.className = 'cm-value-asset';
+                        assetCell.textContent = `${assetOpen} / ${assetClose}`;
+                    } else {
+                        assetCell.className = 'cm-config-value missing';
+                        assetCell.textContent = 'N/A';
+                    }
+                    row.appendChild(assetCell);
+                    
+                    // Margin Needed - use margin_needed from config response
+                    const marginNeededCell = document.createElement('td');
+                    if (config.margin_needed !== undefined && config.margin_needed !== null) {
+                        marginNeededCell.className = 'cm-value-margin';
+                        marginNeededCell.textContent = config.margin_needed.toLocaleString();
+                    } else {
+                        marginNeededCell.className = 'cm-config-value missing';
+                        marginNeededCell.textContent = 'N/A';
+                    }
+                    row.appendChild(marginNeededCell);
+                    
+                    // Add Actions cell with all buttons in single row
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'cm-row-action-cell';
+                    
+                    // Update buttons
+                    const ltpBtn = document.createElement('button');
+                    ltpBtn.className = 'cm-update-btn';
+                    ltpBtn.textContent = 'LTP';
+                    ltpBtn.onclick = () => updateConfigLTP(this,ticker, strategy, broker, account, config.name);
+                    actionCell.appendChild(ltpBtn);
+                    
+                    const openBtn = document.createElement('button');
+                    openBtn.className = 'cm-update-btn';
+                    openBtn.textContent = 'Open';
+                    openBtn.onclick = () => updateConfigOpen(this,ticker, strategy, broker, account, config.content.index);
+                    actionCell.appendChild(openBtn);
+                    
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'cm-update-btn';
+                    closeBtn.textContent = 'Close';
+                    closeBtn.onclick = () => updateConfigClose(this,ticker, strategy, broker, account, config.content.index);
+                    actionCell.appendChild(closeBtn);
+                    
+                    // Separator
+                    const separator = document.createElement('span');
+                    separator.className = 'cm-action-separator';
+                    actionCell.appendChild(separator);
+                    
+                    // View buttons
+                    const configBtn = document.createElement('button');
+                    configBtn.className = 'cm-view-btn';
+                    configBtn.textContent = 'Config';
+                    configBtn.onclick = () => viewBotConfig(config.path, config.name);
+                    actionCell.appendChild(configBtn);
+                    
+                    const orderRangeBtn = document.createElement('button');
+                    orderRangeBtn.className = 'cm-view-btn';
+                    orderRangeBtn.textContent = 'Range';
+                    orderRangeBtn.onclick = () => viewOrderRange(config.path, ticker);
+                    actionCell.appendChild(orderRangeBtn);
+                    
+                    row.appendChild(actionCell);
+                } else {
+                    // No content available
+                    for (let i = 0; i < 4; i++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'cm-config-value missing';
+                        cell.textContent = 'N/A';
+                        row.appendChild(cell);
+                    }
+                    // Add empty action cell
+                    const actionCell = document.createElement('td');
+                    actionCell.className = 'cm-config-value';
+                    actionCell.textContent = '-';
+                    row.appendChild(actionCell);
+                }
+                
+                tbody.appendChild(row);
+            });
+            
+            // Show footer if there are configs
+            if (configs.length > 0) {
+                footer.style.display = 'block';
+            } else {
+                footer.style.display = 'none';
+            }
+        }
+        
+        // Helper function to extract specific field from config object
+        function extractFieldFromConfig(obj, fieldName) {
+            if (!obj || typeof obj !== 'object') return null;
+            
+            // Map display names to actual JSON paths
+            const fieldMappings = {
+                'ETF': 'ETF',
+                'Asset Open': 'asset.open',
+                'Asset Close': 'asset.close',
+                'Buy Margin': 'margin.buy',
+                'Sell Margin': 'margin.sell'
+            };
+            
+            const jsonPath = fieldMappings[fieldName] || fieldName;
+            
+            // Handle nested paths (e.g., "asset.open")
+            const pathParts = jsonPath.split('.');
+            let current = obj;
+            
+            for (const part of pathParts) {
+                if (current && typeof current === 'object' && part in current) {
+                    current = current[part];
+                } else {
+                    return null;
+                }
+            }
+            
+            return current !== undefined ? formatValue(current) : null;
+        }
+        
+        // Helper to format extracted value
+        function formatValue(value) {
+            if (value === null || value === undefined) return null;
+            if (typeof value === 'object') {
+                if (Array.isArray(value)) {
+                    return value.join(', ');
+                }
+                return JSON.stringify(value);
+            }
+            return String(value);
+        }
+        
+        // Helper to extract ticker name from config file name
+        // e.g., "1109120000_MON100.json" -> "MON100"
+        function extractTickerFromFileName(fileName) {
+            if (!fileName) return 'N/A';
+            
+            // Remove .json extension
+            let name = fileName.replace(/\.json$/, '');
+            
+            // Extract the part after the last underscore
+            const parts = name.split('_');
+            return parts.length > 1 ? parts[parts.length - 1] : name;
+        }
+        
+        // ============ Config Manager Update Functions ============
+        
+        // Refresh configs from JSON files
+        async function refreshCMConfigs() {
+            const strategy = document.getElementById('cm-strategy').value;
+            const broker = document.getElementById('cm-broker').value;
+            const account = document.getElementById('cm-account').value;
+            
+            if (!strategy || !broker || !account) {
+                alert('Please select Strategy, Broker, and Account first');
+                return;
+            }
+            
+            try {
+                const response = await fetchJSON(`/api/bot/configs?strategy=${strategy}&broker=${broker}&account=${account}`);
+                
+                if (response.success && response.configs.length > 0) {
+                    renderCMAllConfigs(response.configs);
+                } else {
+                    alert('No config files found or error loading configs');
+                }
+            } catch (error) {
+                console.error('Error refreshing configs:', error);
+                alert('Error refreshing configs: ' + error.message);
+            }
+        }
+        
+        // Dummy function: Update LTP for a single config
+        async function updateConfigLTP(btn,ticker, strategy, broker, account, configName) {
+            if (btn.disabled) return;
+            const originalText = btn.innerText;
+
+            try{
+
+                btn.disabled = true;
+                btn.innerText = "Updating...";
+
+                const response = await fetchJSON(`/api/bot/update_ltp?strategy=${strategy}&broker=${broker}&account=${account}&ticker=${ticker}&config_name=${configName}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`LTP updated for ${ticker}`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update LTP');
+                }
+
+            } catch (error) {
+                console.error('Error updating LTP:', error);
+                onCMAccountChange()
+                showToast(`Error updating LTP for ${ticker}: ${error.message}`, 4000);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        
+        // Dummy function: Update Open price for a single config
+        async function updateConfigOpen(btn,ticker, strategy, broker, account, index) {
+            if (btn.disabled) return;
+            const originalText = btn.innerText;
+
+            try{
+
+                btn.disabled = true;
+                btn.innerText = "Updating...";
+
+                const response = await fetchJSON(`/api/bot/update_open?strategy=${strategy}&broker=${broker}&account=${account}&ticker=${ticker}&index=${index}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`Open price updated for ${ticker}`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update Open price');
+                }
+
+            } catch (error) {
+                console.error('Error updating Open price:', error);
+                onCMAccountChange()
+                showToast(`Error updating Open price for ${ticker}: ${error.message}`, 4000);
+            }  finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        
+         async function updateConfigClose(btn,ticker, strategy, broker, account, index) {
+            if (btn.disabled) return;
+            const originalText = btn.innerText;
+
+            try{
+                btn.disabled = true;
+                btn.innerText = "Updating...";
+
+                const response = await fetchJSON(`/api/bot/update_close?strategy=${strategy}&broker=${broker}&account=${account}&ticker=${ticker}&index=${index}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`Close price updated for ${ticker}`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update Close price');
+                }
+
+            } catch (error) {
+                console.error('Error updating Close price:', error);
+                onCMAccountChange()
+                showToast(`Error updating Close price for ${ticker}: ${error.message}`, 4000);
+            }  finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        }
+        
+        // Dummy function: Update LTP for all configs
+        function updateAllLTP() {
+            console.log('Update All LTP button clicked');
+            const tbody = document.getElementById('cm-contents-body');
+            const configCount = tbody.rows ? tbody.rows.length : 0;
+            alert(`Dummy Function: Update LTP for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        }
+        
+        // Dummy function: Update Open for all configs
+        function updateAllOpen() {
+            console.log('Update All Open button clicked');
+            const tbody = document.getElementById('cm-contents-body');
+            const configCount = tbody.rows ? tbody.rows.length : 0;
+            alert(`Dummy Function: Update Open for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        }
+        
+        // Dummy function: Update Close for all configs
+        function updateAllClose() {
+            console.log('Update All Close button clicked');
+            const tbody = document.getElementById('cm-contents-body');
+            const configCount = tbody.rows ? tbody.rows.length : 0;
+            alert(`Dummy Function: Update Close for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        }
+
+        function showToast(message, duration = 2000) {
+            const toast = document.getElementById("toast");
+            toast.innerText = message;
+            toast.classList.add("show");
+
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, duration);
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadAllPositions();
             loadBotStrategies();
+            loadCMStrategies();
         });
     </script>
 </body>

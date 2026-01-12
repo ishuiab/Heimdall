@@ -3,20 +3,24 @@ Lightweight Flask application for viewing trading orders
 Uses HTMX for dynamic updates without heavy JavaScript frameworks
 """
 
+from asyncio import subprocess
+import signal
+import subprocess as sync_subprocess
 from fileinput import filename
+from functools import lru_cache
 from flask import Flask, render_template, request, jsonify
-import psycopg2
-import redis
-import os
-import json
-import requests
+import os,json,redis,psycopg2,requests,socket,shlex
 from pathlib import Path
+from filelock import FileLock
 from dotenv import load_dotenv
+import tempfile
+import yfinance as yf
 
 # Load environment variables from .env file
 load_dotenv()
 from psycopg2.extras import RealDictCursor
-from datetime import datetime, date
+from datetime import datetime, date, time
+import time as time_module
 from config import Config
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -66,6 +70,9 @@ LOGS_BASE_PATH    = Config.LOGS_BASE_PATH
 #Services and bot commands and logs path from Config
 SERVICE_COMMANDS = Config.SERVICE_COMMANDS
 BOT_COMMANDS     = Config.BOT_COMMANDS
+
+_security_id_cache = {}
+_cache_stats       = {"hits": 0, "misses": 0}
 
 @app.route("/")
 def index():
@@ -643,6 +650,101 @@ def verify_token_with_value(account, broker, token_value):
         return f"Unknown broker {broker.upper()}"
 
     return "Unknown error"
+
+def get_security_id(ticker, exch):
+    """Get security ID for a ticker from Redis cache, with in-memory caching."""
+    _security_id_cache, _cache_stats
+    
+    try:
+        # Normalize ticker: remove suffix and uppercase
+        ticker = ticker.replace("-EQ", "").replace("-eq", "").upper()
+        exch   = exch.upper()
+        
+        # Validate inputs
+        if not ticker or not exch:
+            return None
+        
+        # Create cache key
+        cache_key = f"{exch}:{ticker}"
+        
+        # Check cache first
+        if cache_key in _security_id_cache:
+            _cache_stats["hits"] += 1
+            security_id_int = _security_id_cache[cache_key]
+            return security_id_int
+        
+        # Cache miss - fetch from Redis
+        _cache_stats["misses"] += 1
+        
+        # Get global Redis connection
+        r = get_redis()
+        if not r:
+            return None
+        
+        # Fetch security ID from Redis
+        redis_key = f"inst:{exch}:{ticker}"
+        security_id = r.hget(redis_key, "security_id")
+        
+        if not security_id:
+            # Cache the None result to avoid repeated lookups
+            _security_id_cache[cache_key] = None
+            return None
+        
+        # Convert to integer
+        try:
+            security_id_int = int(security_id)
+            # Store in cache for future lookups
+            _security_id_cache[cache_key] = security_id_int
+            return security_id_int
+        except (ValueError, TypeError) as e:
+            return None
+            return None
+    
+    except Exception as e:
+        if logger:
+            logger.error(f"❌ Error in get_security_id: {e}")
+        return None
+
+def clear_security_id_cache():
+    """Clear the security ID cache. Useful for refreshing data or testing."""
+    global _security_id_cache, _cache_stats
+    _security_id_cache.clear()
+    _cache_stats = {"hits": 0, "misses": 0}
+
+def get_cache_stats():
+    """Get cache statistics."""
+    global _cache_stats
+    return {
+        "cache_size": len(_security_id_cache),
+        "hits": _cache_stats["hits"],
+        "misses": _cache_stats["misses"],
+        "hit_rate": _cache_stats["hits"] / (_cache_stats["hits"] + _cache_stats["misses"]) * 100 if (_cache_stats["hits"] + _cache_stats["misses"]) > 0 else 0
+    }
+
+def get_ltp(broker, account, filename, config,ticker=""):
+    """Get Last Traded Price for a ticker from Redis cache, fallback to API if missing."""
+    if ticker == "":
+        ticker       = filename.split("_")[1]
+    r            = get_redis()
+    exch         = "NSE"  # Default exchange
+    security_id  = get_security_id(ticker, exch)
+    cache_key    = f"tick:{exch}:{security_id}"    
+    #print(f"Fetching LTP for {ticker} (Security ID: {security_id}) from Redis key: {cache_key}")
+    try:
+        if r and security_id:
+            ltp = r.hget(cache_key, "ltp")
+            if ltp is not None:
+                try:
+                    ltp = float(ltp)
+                    return ltp
+                except (TypeError, ValueError):
+                    return "NA"
+            else:
+                return "NA"
+        else:
+            return "NA"
+    except Exception as e:
+        return "NA"
 
 @app.route("/api/heartbeat")
 def get_heartbeat():
@@ -1926,6 +2028,8 @@ def get_order_range(config, etf_fmv):
 
         buy_mult  = config.get("multiplier", {}).get("buy", 0)
         sell_mult = config.get("multiplier", {}).get("sell", 0)
+
+        ETF_CLOSE = config.get("ETF",0)  # Placeholder if needed in future
         
 
         if buy_mult < 0 or sell_mult < 0:
@@ -1961,6 +2065,7 @@ def get_order_range(config, etf_fmv):
 
             order_range["config"]  = {}
             order_range["config"]["ETF FMV"]     = etf_fmv
+            order_range["config"]["ETF Close"]   = ETF_CLOSE
             order_range["config"]["Start Buy"]   = start_qty_buy
             order_range["config"]["Start Sell"]  = start_qty_sell
             order_range["config"]["Max Buy"]     = max_qty_buy
@@ -2174,7 +2279,12 @@ def read_bot_log(path):
 
     if os.path.exists(LOG_PATH):
         with open(LOG_PATH, 'r') as f:
-            content = f.read()
+            content          = f.read()
+            filtered_content = []
+            for line in content.splitlines():
+                if  "DEBUG" not in line:
+                    filtered_content.append(line)
+            content = "\n".join(filtered_content)
         return {
             "success": True,
             "content": content,
@@ -2187,6 +2297,35 @@ def read_bot_log(path):
     else:
         raise FileNotFoundError(f"Log file not found at {LOG_PATH}")
 
+def get_margin_needed(config_content):
+    """
+    Calculate total margin needed for BUY + SELL orders.
+    Margin = 20% of (price * quantity)
+
+    Args:
+        config_content (dict): Strategy config content
+
+    Returns:
+        float: Total margin required
+    """
+    margin_needed = 0.0
+
+    etf_fmv = calculate_etf_fmv(config_content)
+    order_range = get_order_range(config_content, etf_fmv)
+
+    for side in ("buy", "sell"):
+        side_orders = order_range.get(side, {})
+        for ticker_key, price_map in side_orders.items():
+            for price_str, order in price_map.items():
+                try:
+                    price = float(price_str)
+                    qty   = int(order.get("QTY", 0))
+                    margin_needed += price * qty * 0.20
+                except (ValueError, TypeError):
+                    # Skip malformed entries safely
+                    continue
+
+    return round(margin_needed, 2)
 
 @app.route("/api/bot/strategies")
 def get_bot_strategies():
@@ -2283,6 +2422,21 @@ def get_bot_config_details():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+def get_bot_heartbeat(strategy, broker, account, filename):
+    #heartbeat_key = f"bot:heartbeat:{broker.lower()}_{account}_{ticker}_{strategy}_BOT"
+    ticker = filename.split('_')[1]  # Extract ticker from filename
+    """Get the last heartbeat timestamp for a bot from Redis"""
+    try:
+        redis_client  = get_redis()
+        heartbeat_key = f"bot:heartbeat:{broker.lower()}_{account}_{ticker}_{strategy}_BOT"
+        heartbeat     = redis_client.get(heartbeat_key)
+        if heartbeat:
+            return True
+        else:
+            return False
+    except Exception:
+        return False
+
 @app.route("/api/bot/configs")
 def get_bot_configs():
     """Get all config files for a given strategy, broker, and account"""
@@ -2308,15 +2462,21 @@ def get_bot_configs():
                         configs.append({
                             "name": filename,
                             "path": filepath,
-                            "content": config_content
+                            "content": config_content,
+                            "margin_needed": get_margin_needed(config_content),
+                            "heartbeat": get_bot_heartbeat(strategy, broker, account, filename.replace('.json','')),
+                            "LTP" : get_ltp(broker, account, filename.replace('.json',''),config_content)
                         })
                     except json.JSONDecodeError:
                         configs.append({
                             "name": filename,
                             "path": filepath,
-                            "error": "Invalid JSON"
+                            "error": "Invalid JSON",
+                            "margin_needed": 0,
+                            "heartbeat": get_bot_heartbeat(strategy, broker, account, filename.replace('.json','')),
+                            "LTP" : 0
                         })
-        
+        #heartbeat_key = f"bot:heartbeat:{broker.lower()}_{account}_{ticker}_{strategy}_BOT"
         return jsonify({"success": True, "configs": configs})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -2324,7 +2484,6 @@ def get_bot_configs():
 @app.route("/api/bot/logs")
 def get_bot_logs():
     """Get bot log content for a given bot config path"""
-
     config_path = request.args.get("config_path")
     if not config_path:
         return jsonify({
@@ -2389,6 +2548,491 @@ def get_bot_order_range():
         return jsonify({"success": True, "order_ranges": order_range})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@lru_cache()
+def get_redis():
+    return redis.Redis(
+        host=Config.REDIS_HOST,
+        port=Config.REDIS_PORT,
+        password=Config.REDIS_PASSWORD,
+        db=Config.REDIS_DB,
+        decode_responses=True,
+        socket_connect_timeout=3,
+        socket_keepalive=True,
+        health_check_interval=30
+    )
+
+@app.route("/api/bot/start", methods=['POST'])
+def start_bot():
+    """
+    Start a trading bot as a detached background process
+    """
+    data         = request.get_json(silent=True) or {}
+    config_path  = data.get("config_path")
+    ticker       = data.get("ticker")
+    account      = data.get("account")
+    broker       = data.get("broker")
+    strategy     = data.get("strategy")
+    BOT_COMMANDS = Config.BOT_COMMANDS
+
+    required = ["config_path", "ticker", "account", "broker", "strategy"]
+    missing = [k for k in required if not data.get(k)]
+
+    if missing:
+        return jsonify({
+            "success": False,
+            "error": f"Missing fields: {', '.join(missing)}"
+        }), 400
+
+
+    if strategy not in BOT_COMMANDS:
+        return jsonify({
+            "success": False,
+            "error": f"Strategy {strategy} not found"
+        }), 400
+
+    workdir = os.path.dirname(config_path)
+    if not os.path.isdir(workdir):
+        return jsonify({
+            "success": False,
+            "error": f"Invalid config path directory: {workdir}"
+        }), 400
+
+    redis_client = get_redis()
+    bot_key      = f"bot:{strategy}:{ticker}:{account}:{broker}"
+    base_env     = os.environ.copy()
+
+    if redis_client.exists(bot_key):
+        #bot:heartbeat:dhan_1109120000_NIFTYBEES_ETF_FMV_BOT
+        heartbeat_key = f"bot:heartbeat:{broker.lower()}_{account}_{ticker}_{strategy}_BOT"
+        if redis_client.exists(heartbeat_key):
+            return jsonify({
+                "success": False,
+                "error": "Bot already running for this configuration"
+            }), 409
+
+    #Strategy Command
+    STRATEGY_CMD = BOT_COMMANDS[strategy]['COMMAND']
+    if STRATEGY_CMD.startswith("PYTHONPATH="):
+        env_part, cmd_part = STRATEGY_CMD.split(" ", 1)
+        key, value = env_part.split("=", 1)
+        base_env[key] = value
+        STRATEGY_CMD = cmd_part
+
+    RUN_CMD = [
+            *shlex.split(STRATEGY_CMD),
+            "--ticker", ticker,
+            "--account", account,
+            "--broker", broker
+        ]
+    
+    try:
+        process = sync_subprocess.Popen(
+            RUN_CMD,
+            stdout=sync_subprocess.DEVNULL,
+            stderr=sync_subprocess.DEVNULL,
+            cwd=workdir,
+            env=base_env,
+            start_new_session=True
+        )
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to start bot: {str(e)} {RUN_CMD}"
+        }), 500
+
+    pid  = process.pid
+    host = socket.gethostname()
+    now  = int(time_module.time())
+
+    bot_metadata = {
+        "pid": pid,
+        "host": host,
+        "strategy": strategy,
+        "ticker": ticker,
+        "account": account,
+        "broker": broker,
+        "command": " ".join(RUN_CMD),
+        "workdir": workdir,
+        "start_ts": now,
+        "status": "RUNNING"
+    }
+    # Store bot metadata
+    redis_client.hset(bot_key, mapping=bot_metadata)
+    # Add to active bots index
+    redis_client.sadd("bots:active", bot_key)
+    
+    return jsonify({
+        "success": True,
+        "pid": pid,
+        "host": host,
+        "command": " ".join(RUN_CMD),
+        "message": f"Bot started for {ticker}"
+    })
+
+@app.route("/api/bot/stop", methods=["POST"])
+def stop_bot():
+    """
+    Stop a running trading bot
+    """
+    data = request.get_json(silent=True) or {}
+
+    required = ["ticker", "account", "broker", "strategy"]
+    missing = [k for k in required if not data.get(k)]
+    if missing:
+        return jsonify({
+            "success": False,
+            "error": f"Missing fields: {', '.join(missing)}"
+        }), 400
+
+    ticker   = data["ticker"]
+    account  = data["account"]
+    broker   = data["broker"]
+    strategy = data["strategy"]
+
+    redis_client = get_redis()
+    bot_key = f"bot:{strategy}:{ticker}:{account}:{broker}"
+
+    if not redis_client.exists(bot_key):
+        return jsonify({
+            "success": False,
+            "error": "No running bot found for this configuration"
+        }), 404
+
+    bot_info = redis_client.hgetall(bot_key)
+    pid      = int(bot_info.get("pid", 0))
+    host     = bot_info.get("host", "")
+
+    if host != socket.gethostname():
+        return jsonify({
+            "success": False,
+            "error": "Bot is running on a different host"
+        }), 409
+
+    # Check stale PID
+    heartbeat_key = f"bot:heartbeat:{broker.lower()}_{account}_{ticker}_{strategy}_BOT"
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        redis_client.delete(bot_key)
+        redis_client.srem("bots:active", bot_key)
+        redis_client.delete(heartbeat_key)
+
+        return jsonify({
+            "success": True,
+            "pid": pid,
+            "message": "Bot already stopped (stale entry cleaned)"
+        })
+
+    # Graceful shutdown
+    try:
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to signal process: {str(e)}"
+        }), 500
+
+    # Wait for exit
+    timeout = 5
+    for _ in range(timeout * 10):
+        try:
+            os.kill(pid, 0)
+            time_module.sleep(0.1)
+        except ProcessLookupError:
+            break
+    else:
+        # Force kill
+        try:
+            os.killpg(os.getpgid(pid), signal.SIGKILL)
+        except Exception:
+            pass
+
+    # Cleanup Redis
+    redis_client.delete(bot_key)
+    redis_client.srem("bots:active", bot_key)
+
+    return jsonify({
+        "success": True,
+        "pid": pid,
+        "message": f"Bot stopped for {ticker}"
+    })
+
+def save_ltp(broker, account, ticker, ltp, strategy, logger=None):
+    """Safely update ETF LTP in config file."""
+
+    if not isinstance(ltp, (int, float)) or ltp <= 0:
+        raise ValueError(f"Invalid LTP: {ltp}")
+
+    config_file = os.path.join(
+        Config.CONFIG_BASE_PATH,
+        "STRATEGIES",
+        strategy,
+        broker,
+        account,
+        f"{account}_{ticker}.json"
+    )
+
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"Config file not found: {config_file}")
+
+    lock = FileLock(config_file + ".lock")
+
+    try:
+        with lock:
+            # Read
+            with open(config_file, "r") as f:
+                config_content = json.load(f)
+
+            config_content["ETF"] = float(ltp)
+
+            # Atomic write via temp file
+            dir_name = os.path.dirname(config_file)
+            with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as tmp:
+                json.dump(config_content, tmp, indent=4)
+                tmp.flush()
+                os.fsync(tmp.fileno())
+                temp_name = tmp.name
+
+            os.replace(temp_name, config_file)
+
+        return True
+
+    except Exception as e:
+        if logger:
+            logger.exception(f"Failed to save LTP for {ticker}: {e}")
+        raise
+
+def get_index_price(index):
+    """Fetch current price for a given index"""
+    try:
+        ticker = yf.Ticker(index)
+        data   = ticker.history(period="1d")
+        if data.empty:
+            return "NA"
+        ltp = data['Close'].iloc[-1]
+        return round(float(ltp), 2)
+    except Exception:
+        return "NA"
+
+@app.route("/api/bot/update_ltp")
+def update_ltp():
+    """Update LTP for a given bot config"""
+    try:
+        # Convert query params to dict
+        data = request.args.to_dict()
+
+        required = ["ticker", "account", "broker", "strategy","config_name"]
+        missing  = [k for k in required if not data.get(k)]
+
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+
+        # Example usage
+        ticker      = data["ticker"]
+        account     = data["account"]
+        broker      = data["broker"]
+        strategy    = data["strategy"]
+        config_name = data["config_name"]
+
+        LTP      = get_ltp(broker, account, config_name, strategy, ticker)
+        if LTP != "NA":
+            try:
+                save_ltp(broker, account, ticker, LTP, strategy)
+                return jsonify({
+                    "success": True,
+                    "message": "LTP updated successfully",
+                    "LTP": LTP
+                })
+            except Exception as e:
+                return jsonify({
+                    "success": False,
+                    "error": f"Failed to save LTP: {str(e)}",
+                    "LTP": LTP
+                }), 500
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Could not fetch LTP",
+                "LTP": LTP
+            }), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/update_open")
+def update_open_price():
+    """Update asset open price for a given bot config"""
+    try:
+        # Convert query params to dict
+        data = request.args.to_dict()
+
+        required = ["ticker", "account", "broker", "strategy","index"]
+        missing  = [k for k in required if not data.get(k)]
+
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+
+        # Example usage
+        ticker      = data["ticker"]
+        account     = data["account"]
+        broker      = data["broker"]
+        strategy    = data["strategy"]
+        index       = data["index"]
+        open_price  = get_index_price(index)  
+
+        if open_price == "NA":
+            return jsonify({
+                "success": False,
+                "error": f"Could not fetch open price for index: {index}"
+            }), 500  
+
+        config_file = os.path.join(
+            Config.CONFIG_BASE_PATH,
+            "STRATEGIES",
+            strategy,
+            broker,
+            account,
+            f"{account}_{ticker}.json"
+        )
+
+        if not os.path.exists(config_file):
+            return jsonify({
+                "success": False,
+                "error": f"Config file not found: {config_file}"
+            }), 404
+
+        lock = FileLock(config_file + ".lock")
+
+        try:
+            with lock:
+                # Read
+                with open(config_file, "r") as f:
+                    config_content = json.load(f)
+
+                if "asset" not in config_content:
+                    config_content["asset"] = {}
+
+                config_content["asset"]["open"] = float(open_price)
+
+                # Atomic write via temp file
+                dir_name = os.path.dirname(config_file)
+                with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as tmp:
+                    json.dump(config_content, tmp, indent=4)
+                    tmp.flush()
+                    os.fsync(tmp.fileno())
+                    temp_name = tmp.name
+
+                os.replace(temp_name, config_file)
+
+            return jsonify({
+                "success": True,
+                "message": "Asset open price updated successfully",
+                "open_price": open_price
+            })
+
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Failed to update open price: {str(e)}"
+            }), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/update_close") 
+def update_close_price():
+    """Update asset close price for a given bot config"""
+    try:
+        # Convert query params to dict
+        data = request.args.to_dict()
+
+        required = ["ticker", "account", "broker", "strategy","index"]
+        missing  = [k for k in required if not data.get(k)]
+
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+
+        # Example usage
+        ticker      = data["ticker"]
+        account     = data["account"]
+        broker      = data["broker"]
+        strategy    = data["strategy"]
+        index       = data["index"]
+        close_price  = get_index_price(index)  
+
+        if close_price == "NA":
+            return jsonify({
+                "success": False,
+                "error": f"Could not fetch close price for index: {index}"
+            }), 500  
+
+        config_file = os.path.join(
+            Config.CONFIG_BASE_PATH,
+            "STRATEGIES",
+            strategy,
+            broker,
+            account,
+            f"{account}_{ticker}.json"
+        )
+
+        if not os.path.exists(config_file):
+            return jsonify({
+                "success": False,
+                "error": f"Config file not found: {config_file}"
+            }), 404
+
+        lock = FileLock(config_file + ".lock")
+
+        try:
+            with lock:
+                # Read
+                with open(config_file, "r") as f:
+                    config_content = json.load(f)
+
+                if "asset" not in config_content:
+                    config_content["asset"] = {}
+
+                config_content["asset"]["close"] = float(close_price)
+
+                # Atomic write via temp file
+                dir_name = os.path.dirname(config_file)
+                with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as tmp:
+                    json.dump(config_content, tmp, indent=4)
+                    tmp.flush()
+                    os.fsync(tmp.fileno())
+                    temp_name = tmp.name
+
+                os.replace(temp_name, config_file)
+
+            return jsonify({
+                "success": True,
+                "message": "Asset close price updated successfully",
+                "close_price": close_price
+            })
+
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Failed to update open price: {str(e)}"
+            }), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)

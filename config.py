@@ -14,7 +14,7 @@ class Config:
     REDIS_PORT     = int(os.getenv("REDIS_PORT", "6379"))
     REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
     REDIS_DB       = int(os.getenv("REDIS_DB", "0"))
-    TOKENS_PATH    = os.getenv("TOKENS_PATH", "/home/algobaba/DATALORE/kite_data/")
+    TOKENS_PATH    = os.getenv("TOKENS_PATH", "/home/algobaba/DATALORE/CONFIGS/TOKENS/")
 
     #COMMAND and LOG configuration
     SERVICE_COMMANDS = {
@@ -37,9 +37,8 @@ class Config:
 
     #BOT COMMANDS
     BOT_COMMANDS = {
-        "ETF_FMV_SCALPER":{
-            "COMMAND":"/mnt/DATA/LINUX_VENVS/FMV_SCALPER/bin/python /mnt/HDD/hypotheis/FMV_SCALPER/ETF_FMV.py",
-            "LOGS_PATH":"/home/algobaba/DATALORE/logs/FMV_LOGS/"
+        "ETF_FMV":{
+            "COMMAND":"PYTHONPATH=/home/algobaba/DATALORE/FairEdge /mnt/DATA/LINUX_VENVS/FMV_SCALPER/bin/python -m strategies.ETF_FMV.ETF_FMV",
         }
     }
     
