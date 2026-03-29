@@ -6,6 +6,7 @@ Uses HTMX for dynamic updates without heavy JavaScript frameworks
 from asyncio import subprocess
 import signal
 import subprocess as sync_subprocess
+import sys
 from fileinput import filename
 from functools import lru_cache
 from flask import Flask, render_template, request, jsonify
@@ -15,6 +16,11 @@ from filelock import FileLock
 from dotenv import load_dotenv
 import tempfile
 import yfinance as yf
+
+# Add FairEdge order_engine to path for cancel order functionality
+sys.path.insert(0, "/home/algobaba/DATALORE/FairEdge")
+from order_engine.models import OrderRequest
+from order_engine.redis_queue import enqueue_order
 
 # Load environment variables from .env file
 load_dotenv()
@@ -70,6 +76,8 @@ LOGS_BASE_PATH    = Config.LOGS_BASE_PATH
 #Services and bot commands and logs path from Config
 SERVICE_COMMANDS = Config.SERVICE_COMMANDS
 BOT_COMMANDS     = Config.BOT_COMMANDS
+
+proxies          = Config.proxies
 
 _security_id_cache = {}
 _cache_stats       = {"hits": 0, "misses": 0}
@@ -265,17 +273,27 @@ def get_stats():
 
 @app.route("/api/config/files")
 def get_config_files():
-    """Get list of JSON config files"""
+    """Get list of JSON config files for selected strategy/broker/account"""
     try:
+        strategy = request.args.get('strategy')
+        broker = request.args.get('broker') 
+        account = request.args.get('account')
+        
+        if not all([strategy, broker, account]):
+            return jsonify({"success": True, "files": []})
+            
+        config_dir = os.path.join(CONFIGS_BASE_PATH, "STRATEGIES", strategy, broker, account)
         files = []
-        if os.path.exists(CONFIG_DIR):
-            for f in sorted(os.listdir(CONFIG_DIR)):
+        
+        if os.path.exists(config_dir):
+            for f in sorted(os.listdir(config_dir)):
                 if f.endswith('.json'):
-                    filepath = os.path.join(CONFIG_DIR, f)
+                    filepath = os.path.join(config_dir, f)
                     files.append({
                         "name": f,
                         "size": os.path.getsize(filepath),
-                        "modified": os.path.getmtime(filepath)
+                        "modified": os.path.getmtime(filepath),
+                        "path": filepath
                     })
         return jsonify({"success": True, "files": files})
     except Exception as e:
@@ -285,11 +303,20 @@ def get_config_files():
 def get_config_file(filename):
     """Get content of a specific config file"""
     try:
+        strategy = request.args.get('strategy')
+        broker = request.args.get('broker')
+        account = request.args.get('account')
+        
         # Security: ensure filename doesn't contain path traversal
         if '..' in filename or '/' in filename:
             return jsonify({"success": False, "error": "Invalid filename"}), 400
         
-        filepath = os.path.join(CONFIG_DIR, filename)
+        if not all([strategy, broker, account]):
+            return jsonify({"success": False, "error": "Missing strategy, broker or account"}), 400
+            
+        config_dir = os.path.join(CONFIGS_BASE_PATH, "STRATEGIES", strategy, broker, account)
+        filepath = os.path.join(config_dir, filename)
+        
         if not os.path.exists(filepath):
             return jsonify({"success": False, "error": "File not found"}), 404
         
@@ -306,11 +333,20 @@ def get_config_file(filename):
 def save_config_file(filename):
     """Save content to a config file"""
     try:
+        strategy = request.args.get('strategy')
+        broker = request.args.get('broker')
+        account = request.args.get('account')
+        
         # Security: ensure filename doesn't contain path traversal
         if '..' in filename or '/' in filename:
             return jsonify({"success": False, "error": "Invalid filename"}), 400
         
-        filepath = os.path.join(CONFIG_DIR, filename)
+        if not all([strategy, broker, account]):
+            return jsonify({"success": False, "error": "Missing strategy, broker or account"}), 400
+            
+        config_dir = os.path.join(CONFIGS_BASE_PATH, "STRATEGIES", strategy, broker, account)
+        os.makedirs(config_dir, exist_ok=True)
+        filepath = os.path.join(config_dir, filename)
         
         data = request.get_json()
         if data is None:
@@ -324,8 +360,14 @@ def save_config_file(filename):
         if isinstance(content, str):
             content = json.loads(content)
         
-        with open(filepath, 'w') as f:
-            json.dump(content, f, indent=4)
+        # Use atomic write with temp file
+        with tempfile.NamedTemporaryFile('w', dir=config_dir, delete=False) as tmp:
+            json.dump(content, tmp, indent=4)
+            tmp.flush()
+            os.fsync(tmp.fileno())
+            temp_name = tmp.name
+        
+        os.replace(temp_name, filepath)
         
         return jsonify({"success": True, "message": f"File {filename} saved successfully"})
     except json.JSONDecodeError as e:
@@ -516,6 +558,10 @@ def check_execution_engine_health():
     """Check if ExecutionEngine is running by checking Redis heartbeat key"""
     return check_service_heartbeat("ExecutionEngine", "heartbeat:ExecutionEngine")
 
+def check_position_engine_health():
+    """Check if PositionEngine is running by checking Redis heartbeat key"""
+    return check_service_heartbeat("PositionEngine", "heartbeat:PositionEngine")
+
 def get_token_status(account, broker):
     """Dummy function to get token status for an account and broker"""
     # In real implementation, check token validity from database or file
@@ -537,6 +583,7 @@ def get_token_status(account, broker):
         jData_str    = json.dumps(jData)
         request_data = f"jData={jData_str}&jKey={token}"
         sess         = requests.Session()
+        sess.proxies = proxies
         try:
             resp = sess.post(
                 f"https://api.shoonya.com/NorenWClientTP/Limits",
@@ -721,7 +768,7 @@ def get_cache_stats():
         "hit_rate": _cache_stats["hits"] / (_cache_stats["hits"] + _cache_stats["misses"]) * 100 if (_cache_stats["hits"] + _cache_stats["misses"]) > 0 else 0
     }
 
-def get_ltp(broker, account, filename, config,ticker=""):
+def get_ltp(broker, account, filename, config, ticker=""):
     """Get Last Traded Price for a ticker from Redis cache, fallback to API if missing."""
     if ticker == "":
         ticker       = filename.split("_")[1]
@@ -754,7 +801,8 @@ def get_heartbeat():
         "redis": check_redis_health(),
         "dataapi": check_dataapi_health(),
         "orderprocessor": check_order_processor_health(),
-        "executionengine": check_execution_engine_health()
+        "executionengine": check_execution_engine_health(),
+        "positionengine":check_position_engine_health()
     }
     
     # Overall status - healthy only if all are healthy, degraded if any warning/unhealthy
@@ -1045,8 +1093,12 @@ def fetch_shoonya_positions(account, token, result):
                 result["error"] = "Invalid JSON response"
                 result["token_status"] = "unknown"
         else:
-            result["error"] = f"HTTP {resp.status_code}"
-            result["token_status"] = "unknown"
+            if resp.status_code == 401:
+                result["error"] = "Invalid token"
+                result["token_status"] = "invalid"
+            else:
+                result["error"] = f"HTTP {resp.status_code}"
+                result["token_status"] = "unknown"
             
     except Exception as e:
         result["error"] = f"{str(e)}"
@@ -1264,13 +1316,14 @@ def get_tickers():
         # Filter out keys starting with "inst"
         filtered_keys_str = [k for k in all_keys_str if not k.lower().startswith("inst")]
         
-        # Find all keys matching the pattern tick:*
-        pattern = "tick:*"
-        keys = r.keys(pattern)
+        # Find all keys matching the pattern tick:BSE:* or tick:NSE:*
+        bse_pattern = "tick:BSE:*"
+        nse_pattern = "tick:NSE:*"
+        bse_keys = r.keys(bse_pattern)
+        nse_keys = r.keys(nse_pattern)
+        keys = list(set(bse_keys + nse_keys))  # Combine and deduplicate
         
-        # If no keys found with tick:*, try other common patterns
-        if not keys:
-            keys = r.keys("tick*")
+        pattern = f"{bse_pattern} or {nse_pattern}"
         
         tickers = []
         failed_keys = []
@@ -1510,8 +1563,12 @@ def fetch_shoonya_funds(account, token, result):
                 result["error"] = "Invalid JSON response"
                 result["token_status"] = "unknown"
         else:
-            result["error"] = f"HTTP {resp.status_code}"
-            result["token_status"] = "unknown"
+            if resp.status_code == 401:
+                result["error"] = "Invalid token"
+                result["token_status"] = "invalid"
+            else:
+                result["error"] = f"HTTP {resp.status_code}"
+                result["token_status"] = "unknown"
             
     except Exception as e:
         result["error"] = str(e)
@@ -2335,11 +2392,11 @@ def get_bot_strategies():
         strategies = []
         
         if os.path.exists(strategies_path):
-            # List all strategy folders (SHOONYA, DHAN, etc.)
-            for broker_folder in os.listdir(strategies_path):
-                broker_path = os.path.join(strategies_path, broker_folder)
-                if os.path.isdir(broker_path):
-                    strategies.append(broker_folder)
+            # List all strategy folders
+            for item in os.listdir(strategies_path):
+                item_path = os.path.join(strategies_path, item)
+                if os.path.isdir(item_path):
+                    strategies.append(item)
         
         return jsonify({"success": True, "strategies": sorted(strategies)})
     except Exception as e:
@@ -2353,15 +2410,15 @@ def get_bot_brokers():
         if not strategy:
             return jsonify({"success": False, "error": "Strategy parameter required"}), 400
         
-        brokers_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy)
+        strategy_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy)
         brokers = []
         
-        if os.path.exists(brokers_path):
-            # List all account folders (these are broker identifiers like FA394567)
-            for account_folder in os.listdir(brokers_path):
-                account_path = os.path.join(brokers_path, account_folder)
-                if os.path.isdir(account_path):
-                    brokers.append(account_folder)
+        if os.path.exists(strategy_path):
+            # List all broker folders within the strategy
+            for item in os.listdir(strategy_path):
+                item_path = os.path.join(strategy_path, item)
+                if os.path.isdir(item_path):
+                    brokers.append(item)
         
         return jsonify({"success": True, "brokers": sorted(brokers)})
     except Exception as e:
@@ -2377,15 +2434,15 @@ def get_bot_accounts():
         if not strategy or not broker:
             return jsonify({"success": False, "error": "Strategy and broker parameters required"}), 400
         
-        accounts_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy, broker)
+        broker_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", strategy, broker)
         accounts = []
         
-        if os.path.exists(accounts_path):
-            # List all strategy type folders (e.g., ETF_FMV)
-            for strategy_type in os.listdir(accounts_path):
-                strategy_path = os.path.join(accounts_path, strategy_type)
-                if os.path.isdir(strategy_path):
-                    accounts.append(strategy_type)
+        if os.path.exists(broker_path):
+            # List all account folders within the broker
+            for item in os.listdir(broker_path):
+                item_path = os.path.join(broker_path, item)
+                if os.path.isdir(item_path):
+                    accounts.append(item)
         
         return jsonify({"success": True, "accounts": sorted(accounts)})
     except Exception as e:
@@ -2459,11 +2516,13 @@ def get_bot_configs():
                     try:
                         with open(filepath, 'r') as f:
                             config_content = json.load(f)
+                        heartbeat_strategy = config_content.get("filter_pattern", strategy)
                         configs.append({
                             "name": filename,
                             "path": filepath,
                             "content": config_content,
                             "margin_needed": get_margin_needed(config_content),
+                            "heartbeat_key":heartbeat_strategy,
                             "heartbeat": get_bot_heartbeat(strategy, broker, account, filename.replace('.json','')),
                             "LTP" : get_ltp(broker, account, filename.replace('.json',''),config_content)
                         })
@@ -3032,7 +3091,327 @@ def update_close_price():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route("/api/bot/update_all_ltp")
+def update_all_ltp():
+    """Update LTP for all bot configs"""
+    try:
+        data            = request.args.to_dict()
+        required        = ["account", "broker", "strategy"]
+        missing         = [k for k in required if not data.get(k)]
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+        
+        strategies_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", data["strategy"], data["broker"], data["account"])
+        if not os.path.exists(strategies_path):
+            return jsonify({
+                "success": False,
+                "error": f"Configs path not found: {strategies_path}"
+            }), 404
+        
+        CFG_FILES       = [f for f in os.listdir(strategies_path) if f.endswith('.json')]
+        updated_configs = []
+        failed_updates  = []
 
+        for cfg in CFG_FILES:
+            config_file = os.path.join(strategies_path, cfg)
+            file_name  = Path(config_file).stem
+            try:
+                with open(config_file, 'r') as f:
+                    config_content = json.load(f)
+
+                ticker = cfg.replace(f"{data['account']}_","").replace(".json","")
+                LTP    = get_ltp(data["broker"], data["account"], file_name, config_content)
+                if LTP != "NA":
+                    save_ltp(data["broker"], data["account"], ticker, LTP, data["strategy"])
+                    updated_configs.append({
+                        "config": cfg,
+                        "LTP": LTP,
+                    })
+                else:
+                    failed_updates.append({
+                        "config": cfg,
+                        "error": "Could not fetch LTP",
+                        "file_name": file_name,
+                        "LTP": LTP
+                    })
+            except Exception as e:
+                failed_updates.append({
+                    "config": cfg,
+                    "error": str(e)
+                })
+                continue
+        
+        return jsonify({
+            "success": True,
+            "updated_configs": updated_configs,
+            "failed_updates": failed_updates
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/update_all_open")
+def update_all_open():
+    """Update asset open price for all bot configs"""
+    try:
+        data            = request.args.to_dict()
+        required        = ["account", "broker", "strategy"]
+        missing         = [k for k in required if not data.get(k)]
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+        
+        strategies_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", data["strategy"], data["broker"], data["account"])
+        if not os.path.exists(strategies_path):
+            return jsonify({
+                "success": False,
+                "error": f"Configs path not found: {strategies_path}"
+            }), 404
+        
+        CFG_FILES       = [f for f in os.listdir(strategies_path) if f.endswith('.json')]
+        updated_configs = []
+        failed_updates  = []
+
+        for cfg in CFG_FILES:
+            config_file = os.path.join(strategies_path, cfg)
+            file_name  = Path(config_file).stem
+            try:
+                with open(config_file, 'r') as f:
+                    config_content = json.load(f)
+
+                ticker = cfg.replace(f"{data['account']}_","").replace(".json","")
+                index  = config_content.get("index", "")
+                open_price = get_index_price(index)  
+                if open_price == "NA":
+                    failed_updates.append({
+                        "config": cfg,
+                        "error": f"Could not fetch open price for index: {index} {open_price}"
+                    })
+                    continue
+
+                lock = FileLock(config_file + ".lock")
+
+                try:
+                    with lock:
+                        # Read
+                        with open(config_file, "r") as f:
+                            config_content = json.load(f)
+
+                        if "asset" not in config_content:
+                            config_content["asset"] = {}
+
+                        config_content["asset"]["open"] = float(open_price)
+
+                        # Atomic write via temp file
+                        dir_name = os.path.dirname(config_file)
+                        with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as tmp:
+                            json.dump(config_content, tmp, indent=4)
+                            tmp.flush()
+                            os.fsync(tmp.fileno())
+                            temp_name = tmp.name
+
+                        os.replace(temp_name, config_file)
+
+                    updated_configs.append({
+                        "config": cfg,
+                        "open_price": open_price
+                    })
+                except Exception as e:
+                    failed_updates.append({
+                        "config": cfg,
+                        "error": f"Failed to update open price: {str(e)}"
+                    })
+                    continue
+            except Exception as e:
+                failed_updates.append({
+                    "config": cfg,
+                    "error": str(e)
+                })
+                continue
+
+        return jsonify({
+            "success": True,
+            "updated_configs": updated_configs,
+            "failed_updates": failed_updates
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/bot/update_all_close")
+def update_all_close():
+    """Update asset close price for all bot configs"""
+    try:
+        data            = request.args.to_dict()
+        required        = ["account", "broker", "strategy"]
+        missing         = [k for k in required if not data.get(k)]
+        if missing:
+            return jsonify({
+                "success": False,
+                "error": f"Missing fields: {', '.join(missing)}",
+                "received": data
+            }), 400
+        
+        strategies_path = os.path.join(Config.CONFIG_BASE_PATH, "STRATEGIES", data["strategy"], data["broker"], data["account"])
+        if not os.path.exists(strategies_path):
+            return jsonify({
+                "success": False,
+                "error": f"Configs path not found: {strategies_path}"
+            }), 404
+        
+        CFG_FILES       = [f for f in os.listdir(strategies_path) if f.endswith('.json')]
+        updated_configs = []
+        failed_updates  = []
+
+        for cfg in CFG_FILES:
+            config_file = os.path.join(strategies_path, cfg)
+            file_name  = Path(config_file).stem
+            try:
+                with open(config_file, 'r') as f:
+                    config_content = json.load(f)
+
+                ticker = cfg.replace(f"{data['account']}_","").replace(".json","")
+                index  = config_content.get("index", "")
+                close_price = get_index_price(index)  
+                if close_price == "NA":
+                    failed_updates.append({
+                        "config": cfg,
+                        "error": f"Could not fetch close price for index: {index} {close_price}"
+                    })
+                    continue
+
+                lock = FileLock(config_file + ".lock")
+
+                try:
+                    with lock:
+                        # Read
+                        with open(config_file, "r") as f:
+                            config_content = json.load(f)
+
+                        if "asset" not in config_content:
+                            config_content["asset"] = {}
+
+                        config_content["asset"]["close"] = float(close_price)
+
+                        # Atomic write via temp file
+                        dir_name = os.path.dirname(config_file)
+                        with tempfile.NamedTemporaryFile("w", dir=dir_name, delete=False) as tmp:
+                            json.dump(config_content, tmp, indent=4)
+                            tmp.flush()
+                            os.fsync(tmp.fileno())
+                            temp_name = tmp.name
+
+                        os.replace(temp_name, config_file)
+
+                    updated_configs.append({
+                        "config": cfg,
+                        "close_price": close_price
+                    })
+                except Exception as e:
+                    failed_updates.append({
+                        "config": cfg,
+                        "error": f"Failed to update close price: {str(e)}"
+                    })
+                    continue
+            except Exception as e:
+                failed_updates.append({
+                    "config": cfg,
+                    "error": str(e)
+                })
+                continue
+
+        return jsonify({
+            "success": True,
+            "updated_configs": updated_configs,
+            "failed_updates": failed_updates
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/redis-orders/cancel", methods=["POST"])
+def cancel_order():
+    """
+    Cancel an order by sending a cancel request to OMS via Redis queue.
+    
+    Required fields:
+        - order_id: The broker's order ID to cancel
+        - broker: Broker type (SHOONYA or DHAN)
+        - account: Account ID
+        - symbol: Trading symbol
+        - exch: Exchange (e.g., NSE, BSE)
+    
+    Optional fields:
+        - bot_id: Bot identifier (defaults to 'HEIMDALL')
+        - remarks: Cancel reason (max 30 chars)
+    """
+    data = request.get_json(silent=True) or {}
+
+    # Validate required fields
+    required = ["order_id", "broker", "account", "symbol", "exchange"]
+    missing = [k for k in required if not data.get(k)]
+    
+    if missing:
+        return jsonify({
+            "success": False,
+            "error": f"Missing required fields: {', '.join(missing)}"
+        }), 400
+
+    try:
+        # Create cancel order request
+        cancel_request = OrderRequest.new(
+            bot_id=data.get("bot_id", "HEIMDALL"),
+            account_id=data["account"],
+            broker_type=data["broker"].upper(),
+            symbol=data["symbol"],
+            exch=data["exchange"],
+            side="BUY",           # Required by model but ignored for CANCEL
+            qty=1,                # Required by model but ignored for CANCEL
+            action="CANCEL",
+            order_id=data["order_id"],
+            remarks=data.get("remarks", "Cancel via Heimdall")[:30]  # Max 30 chars
+        )
+        
+        # Enqueue the cancel request to Redis
+        success = enqueue_order(cancel_request)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Cancel request enqueued for order {data['order_id']}",
+                "client_order_id": cancel_request.client_order_id,
+                "order_id": data["order_id"]
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Failed to enqueue cancel request"
+            }), 500
+            
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "error": f"Invalid request: {str(e)}"
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to process cancel request: {str(e)}"
+        }), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    import sys
+    port = 5001  # Default to 5001 to avoid conflicts
+    if len(sys.argv) > 1:
+        try:
+            port = int(sys.argv[1])
+        except ValueError:
+            pass
+    app.run(debug=True, host="0.0.0.0", port=port)

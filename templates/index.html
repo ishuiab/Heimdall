@@ -262,6 +262,16 @@
             background: #444;
         }
         
+        .btn-danger {
+            background: #ff4757;
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        .btn-danger:hover {
+            background: #ee3940;
+        }
+        
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -292,6 +302,7 @@
         
         .stat-card.buy .stat-value { color: #00ff88; }
         .stat-card.sell .stat-value { color: #ff6b6b; }
+        .stat-card.cancelled .stat-value { color: #ffd93d; }
         .stat-card.rejected .stat-value { color: #ff9f43; }
         
         .table-container {
@@ -454,6 +465,22 @@
         
         /* Config Editor - Compact Styles */
         :root { --cyan: #00d4ff; --bg-dark: #1a1a1a; --bg-mid: #252525; --border: #333; --text-primary: #e0e0e0; --text-secondary: #888; --text-tertiary: #666; }
+        
+        .config-editor-filters {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .config-editor-filters .filter-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+        
         .config-container { display: grid; grid-template-columns: 280px 1fr; gap: 20px; min-height: 70vh; }
         .config-file-list, .config-editor-panel { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
         .config-file-list-header, .config-editor-header { padding: 15px; background: var(--bg-mid); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
@@ -1504,6 +1531,10 @@
         .config-status.error { display: block; background: rgba(255, 107, 107, 0.1); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
         .json-form { display: flex; flex-direction: column; gap: 8px; overflow-y: auto; max-height: 65vh; padding-right: 8px; }
         .json-field-group { background: var(--bg-mid); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+        .json-field-group.trading { border-left: 3px solid #4ade80; }
+        .json-field-group.system { border-left: 3px solid #f59e0b; }
+        .json-field-group.ui { border-left: 3px solid #8b5cf6; }
+        .json-field-group.general { border-left: 3px solid #06b6d4; }
         .json-field-group-title { font-size: 0.8rem; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--border); }
         .json-field { display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 8px; margin-bottom: 6px; }
         .json-field:last-child { margin-bottom: 0; }
@@ -1512,17 +1543,93 @@
         .json-field-input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.15); }
         .json-field-input.number { max-width: 100px; }
         .json-field-input.boolean { width: 18px; height: 18px; }
-        .json-nested-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 6px; }
-        .json-nested-field { display: flex; flex-direction: column; gap: 3px; }
-        .json-nested-field label { font-size: 0.75rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .json-nested-field input { font-size: 0.8rem; padding: 5px 6px; }
-        .json-array-field { display: flex; flex-direction: column; gap: 6px; }
-        .json-array-item { display: flex; gap: 6px; align-items: center; }
-        .json-array-item input { flex: 1; font-size: 0.8rem; padding: 5px 6px; }
-        .json-array-item button { background: #ff6b6b; border: none; color: white; width: 24px; height: 24px; border-radius: 3px; cursor: pointer; font-size: 0.9rem; transition: background 0.15s; padding: 0; }
-        .json-array-item button:hover { background: #ff5252; }
-        .json-array-add { background: var(--border); border: 1px dashed #555; color: var(--text-secondary); padding: 5px 6px; border-radius: 4px; cursor: pointer; text-align: center; font-size: 0.75rem; transition: all 0.15s; }
-        .json-array-add:hover { background: #3a3a3a; border-color: var(--cyan); color: var(--cyan); }
+        .json-nested-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px; }
+        .json-nested-field { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px; }
+        .json-nested-field label { font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+        .json-nested-field input { font-size: 0.85rem; padding: 6px 8px; }
+        .json-nested-field .slider-container { width: 100%; }
+        .json-array-field { display: flex; flex-direction: column; gap: 6px; padding: 10px; }
+        .json-array-item { display: flex; gap: 10px; align-items: center; }
+        .json-array-item input { flex: 1; font-size: 0.85rem; padding: 6px 8px; }
+        .array-index { color: var(--text-tertiary); font-size: 0.8rem; min-width: 25px; }
+        
+        /* Slider Styles */
+        .slider-container { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .json-slider { 
+            flex: 1; 
+            height: 6px; 
+            -webkit-appearance: none; 
+            appearance: none; 
+            background: linear-gradient(to right, #333, #444); 
+            border-radius: 3px; 
+            cursor: pointer;
+        }
+        .json-slider::-webkit-slider-thumb { 
+            -webkit-appearance: none; 
+            width: 18px; 
+            height: 18px; 
+            background: linear-gradient(135deg, #00d4ff, #0099cc); 
+            border-radius: 50%; 
+            cursor: pointer; 
+            box-shadow: 0 2px 6px rgba(0, 212, 255, 0.4);
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .json-slider::-webkit-slider-thumb:hover { 
+            transform: scale(1.15); 
+            box-shadow: 0 3px 10px rgba(0, 212, 255, 0.6);
+        }
+        .json-slider::-moz-range-thumb { 
+            width: 18px; 
+            height: 18px; 
+            background: linear-gradient(135deg, #00d4ff, #0099cc); 
+            border-radius: 50%; 
+            cursor: pointer; 
+            border: none;
+        }
+        .slider-value { 
+            width: 80px !important; 
+            text-align: center; 
+            font-weight: 500;
+        }
+        
+        /* Toggle Switch Styles */
+        .toggle-switch { 
+            position: relative; 
+            display: inline-block; 
+            width: 44px; 
+            height: 24px; 
+        }
+        .toggle-switch input { 
+            opacity: 0; 
+            width: 0; 
+            height: 0; 
+        }
+        .toggle-slider { 
+            position: absolute; 
+            cursor: pointer; 
+            top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: #444; 
+            transition: 0.3s; 
+            border-radius: 24px; 
+        }
+        .toggle-slider:before { 
+            position: absolute; 
+            content: \"\"; 
+            height: 18px; 
+            width: 18px; 
+            left: 3px; 
+            bottom: 3px; 
+            background-color: #888; 
+            transition: 0.3s; 
+            border-radius: 50%; 
+        }
+        .toggle-switch input:checked + .toggle-slider { 
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(74, 222, 128, 0.3)); 
+        }
+        .toggle-switch input:checked + .toggle-slider:before { 
+            transform: translateX(20px); 
+            background: linear-gradient(135deg, #00d4ff, #4ade80); 
+        }
         
         /* Redis Orders Tab Styles */
         .redis-orders-container {
@@ -2915,6 +3022,10 @@
                         <div class="stat-value" id="redis-stat-complete">-</div>
                         <div class="stat-label">Complete</div>
                     </div>
+                    <div class="stat-card cancelled">
+                        <div class="stat-value" id="redis-stat-cancelled">-</div>
+                        <div class="stat-label">Cancelled</div>
+                    </div>
                     <div class="stat-card rejected">
                         <div class="stat-value" id="redis-stat-rejected">-</div>
                         <div class="stat-label">Rejected</div>
@@ -2945,6 +3056,7 @@
                                     <th>Remarks</th>
                                     <th>Order Time</th>
                                     <th>Exch Time</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="redis-orders-body">
@@ -3093,6 +3205,35 @@
         
         <!-- Config Editor Tab -->
         <div id="config-tab" class="tab-content">
+            <div class="config-editor-filters">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="config-strategy">Strategy</label>
+                        <select id="config-strategy" onchange="onConfigStrategyChange()">
+                            <option value="">Select Strategy</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="config-broker">Broker</label>
+                        <select id="config-broker" onchange="onConfigBrokerChange()" disabled>
+                            <option value="">Select Broker</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="config-account">Account</label>
+                        <select id="config-account" onchange="onConfigAccountChange()" disabled>
+                            <option value="">Select Account</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="config-file-select">Config File</label>
+                        <select id="config-file-select" onchange="onConfigFileChange()" disabled>
+                            <option value="">Select Config File</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshConfigSelection()" id="refresh-config-btn" disabled>🔄 Refresh</button>
+                </div>
+            </div>
             <div class="config-container">
                 <div class="config-file-list">
                     <div class="config-file-list-header">
@@ -3101,7 +3242,7 @@
                     </div>
                     <div class="config-files" id="config-files">
                         <div class="config-empty-state">
-                            <p>Loading files...</p>
+                            <p>Select strategy, broker and account to view config files</p>
                         </div>
                     </div>
                 </div>
@@ -3163,10 +3304,14 @@
             <div class="modal-content log-modal">
                 <div class="modal-header">
                     <h2 id="log-viewer-title">Service Logs</h2>
-                    <button class="modal-close" onclick="closeLogViewer()">✕</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn btn-secondary" id="log-refresh-btn" onclick="refreshServiceLogs()" title="Refresh logs">🔄 Refresh</button>
+                        <button class="modal-close" onclick="closeLogViewer()">✕</button>
+                    </div>
                 </div>
                 <div class="modal-info">
                     <span id="log-path" style="font-size: 0.85rem; color: var(--text-secondary);">Path: </span>
+                    <span id="log-filter-info" style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 15px;">Filtered: DEBUG logs hidden</span>
                 </div>
                 <div class="modal-body log-body">
                     <pre id="log-content" style="white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.5;"></pre>
@@ -3369,13 +3514,13 @@
                     <div id="cm-update-footer" class="cm-bulk-update-footer" style="display: none;">
                         <p class="footer-title">⚡ Bulk Update All Configs</p>
                         <div class="footer-buttons">
-                            <button class="cm-update-all-btn" onclick="updateAllLTP()" title="Update LTP for all configs">
+                            <button class="cm-update-all-btn" onclick="updateAllLTP(this)" title="Update LTP for all configs">
                                 📊 Update All LTP
                             </button>
-                            <button class="cm-update-all-btn" onclick="updateAllOpen()" title="Update Open prices for all configs">
+                            <button class="cm-update-all-btn" onclick="updateAllOpen(this)" title="Update Open prices for all configs">
                                 🌅 Update All Open
                             </button>
-                            <button class="cm-update-all-btn" onclick="updateAllClose()" title="Update Close prices for all configs">
+                            <button class="cm-update-all-btn" onclick="updateAllClose(this)" title="Update Close prices for all configs">
                                 🌙 Update All Close
                             </button>
                             <button class="cm-refresh-btn" onclick="onCMAccountChange()" title="Refresh table data from JSON files">
@@ -3791,9 +3936,9 @@
                 document.getElementById('positions-auto-refresh').checked = false;
             }
             
-            // Load config files when switching to config tab
+            // Load config strategies when switching to config tab
             if (tabName === 'config') {
-                loadConfigFiles();
+                loadConfigStrategies();
             }
             
             // Load heartbeat when switching to heartbeat tab
@@ -4291,18 +4436,187 @@
         }
         
         // ============ Config Editor Functions ============
+        
+        async function loadConfigStrategies() {
+            try {
+                console.log('Loading config strategies...');
+                const response = await fetchJSON('/api/bot/strategies');
+                console.log('Strategies response:', response);
+                const select = document.getElementById('config-strategy');
+                if (!select) {
+                    console.error('Strategy select element not found');
+                    return;
+                }
+                select.innerHTML = '<option value="">Select Strategy</option>';
+                
+                if (response.success && response.strategies) {
+                    response.strategies.forEach(strategy => {
+                        select.innerHTML += `<option value="${strategy}">${strategy}</option>`;
+                    });
+                    console.log('Loaded', response.strategies.length, 'strategies');
+                }
+            } catch (error) {
+                console.error('Error loading config strategies:', error);
+            }
+        }
+        
+        async function onConfigStrategyChange() {
+            const strategy = document.getElementById('config-strategy').value;
+            const brokerSelect = document.getElementById('config-broker');
+            const accountSelect = document.getElementById('config-account');
+            const fileSelect = document.getElementById('config-file-select');
+            
+            // Reset dependent dropdowns
+            brokerSelect.innerHTML = '<option value="">Select Broker</option>';
+            accountSelect.innerHTML = '<option value="">Select Account</option>';
+            fileSelect.innerHTML = '<option value="">Select Config File</option>';
+            accountSelect.disabled = true;
+            fileSelect.disabled = true;
+            document.getElementById('refresh-config-btn').disabled = true;
+            
+            if (strategy) {
+                try {
+                    const response = await fetchJSON(`/api/bot/brokers?strategy=${strategy}`);
+                    if (response.success && response.brokers) {
+                        response.brokers.forEach(broker => {
+                            brokerSelect.innerHTML += `<option value="${broker}">${broker}</option>`;
+                        });
+                        brokerSelect.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error loading brokers:', error);
+                }
+            } else {
+                brokerSelect.disabled = true;
+            }
+            clearConfigEditor();
+        }
+        
+        async function onConfigBrokerChange() {
+            const strategy = document.getElementById('config-strategy').value;
+            const broker = document.getElementById('config-broker').value;
+            const accountSelect = document.getElementById('config-account');
+            const fileSelect = document.getElementById('config-file-select');
+            
+            accountSelect.innerHTML = '<option value="">Select Account</option>';
+            fileSelect.innerHTML = '<option value="">Select Config File</option>';
+            fileSelect.disabled = true;
+            document.getElementById('refresh-config-btn').disabled = true;
+            
+            if (strategy && broker) {
+                try {
+                    const response = await fetchJSON(`/api/bot/accounts?strategy=${strategy}&broker=${broker}`);
+                    if (response.success && response.accounts) {
+                        response.accounts.forEach(account => {
+                            accountSelect.innerHTML += `<option value="${account}">${account}</option>`;
+                        });
+                        accountSelect.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error loading accounts:', error);
+                }
+            } else {
+                accountSelect.disabled = true;
+            }
+            clearConfigEditor();
+        }
+        
+        async function onConfigAccountChange() {
+            const strategy = document.getElementById('config-strategy').value;
+            const broker = document.getElementById('config-broker').value;
+            const account = document.getElementById('config-account').value;
+            const fileSelect = document.getElementById('config-file-select');
+            
+            fileSelect.innerHTML = '<option value="">Select Config File</option>';
+            
+            if (strategy && broker && account) {
+                document.getElementById('refresh-config-btn').disabled = false;
+                await loadConfigFiles();
+                fileSelect.disabled = false;
+            } else {
+                fileSelect.disabled = true;
+                document.getElementById('refresh-config-btn').disabled = true;
+            }
+            clearConfigEditor();
+        }
+        
+        function onConfigFileChange() {
+            const filename = document.getElementById('config-file-select').value;
+            if (filename) {
+                loadConfigFile(filename);
+            } else {
+                clearConfigEditor();
+            }
+        }
+        
+        function refreshConfigSelection() {
+            const strategy = document.getElementById('config-strategy').value;
+            const broker = document.getElementById('config-broker').value;
+            const account = document.getElementById('config-account').value;
+            
+            if (strategy && broker && account) {
+                loadConfigFiles();
+            }
+        }
+        
+        function clearConfigEditor() {
+            const form = document.getElementById('json-form');
+            const empty = document.getElementById('config-editor-empty');
+            const title = document.getElementById('config-editor-title');
+            const saveBtn = document.getElementById('save-btn');
+            const formatBtn = document.getElementById('format-btn');
+            
+            form.style.display = 'none';
+            empty.style.display = 'flex';
+            title.textContent = 'Select a file to edit';
+            saveBtn.disabled = true;
+            formatBtn.disabled = true;
+            
+            cfg.file = null;
+            cfg.data = null;
+        }
         let currentConfigFile = null;
         let currentConfigData = null;
         
         async function loadConfigFiles() {
+            const strategy = document.getElementById('config-strategy')?.value;
+            const broker = document.getElementById('config-broker')?.value;
+            const account = document.getElementById('config-account')?.value;
             const container = document.getElementById('config-files');
+            const fileSelect = document.getElementById('config-file-select');
+            
+            if (!strategy || !broker || !account) {
+                container.innerHTML = '<div class="config-empty-state"><p>Select strategy, broker and account to view config files</p></div>';
+                if (fileSelect) fileSelect.innerHTML = '<option value="">Select Config File</option>';
+                return;
+            }
+            
             container.innerHTML = '<div class="config-empty-state"><div class="spinner"></div><p>Loading files...</p></div>';
+            
             try {
-                const r = await fetchJSON('api/config/files');
-                if (!r.success) { container.innerHTML = `<div class="config-empty-state"><p>Error: ${r.error}</p></div>`; return; }
-                if (!r.files.length) { container.innerHTML = '<div class="config-empty-state"><p>No config files found</p></div>'; return; }
-                container.innerHTML = r.files.map(f => `<div class="config-file-item ${cfg.file === f.name ? 'active' : ''}" onclick="loadConfigFile('${f.name}')"><div class="filename">📄 ${f.name}</div><div class="file-meta">${formatFileSize(f.size)}</div></div>`).join('');
+                const r = await fetchJSON(`/api/config/files?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (!r.success) { 
+                    container.innerHTML = `<div class="config-empty-state"><p>Error: ${r.error}</p></div>`; 
+                    return; 
+                }
+                if (!r.files || !r.files.length) { 
+                    container.innerHTML = '<div class="config-empty-state"><p>No config files found</p></div>'; 
+                    if (fileSelect) fileSelect.innerHTML = '<option value="">No files available</option>';
+                    return; 
+                }
+                
+                // Update file list panel
+                container.innerHTML = r.files.map(f => `<div class="config-file-item ${cfg.file === f.name ? 'active' : ''}" onclick="selectConfigFile('${f.name}')"><div class="filename">📄 ${f.name}</div><div class="file-meta">${formatFileSize(f.size)}</div></div>`).join('');
+                
+                // Update file dropdown
+                if (fileSelect) {
+                    fileSelect.innerHTML = '<option value="">Select Config File</option>';
+                    r.files.forEach(f => {
+                        fileSelect.innerHTML += `<option value="${f.name}">${f.name}</option>`;
+                    });
+                }
             } catch (error) {
+                console.error('Error loading config files:', error);
                 container.innerHTML = '<div class="config-empty-state"><p>Error loading files</p></div>';
             }
         }
@@ -4314,11 +4628,25 @@
         }
         
         async function loadConfigFile(filename) {
+            const strategy = document.getElementById('config-strategy').value;
+            const broker = document.getElementById('config-broker').value;
+            const account = document.getElementById('config-account').value;
+            
+            if (!strategy || !broker || !account) {
+                showConfigStatus('Please select strategy, broker and account first', 'error');
+                return;
+            }
+            
             cfg.file = filename;
             document.querySelectorAll('.config-file-item').forEach(i => i.classList.toggle('active', i.textContent.includes(filename)));
+            
+            // Update dropdown selection
+            const fileSelect = document.getElementById('config-file-select');
+            if (fileSelect) fileSelect.value = filename;
+            
             const [form, empty, title, saveBtn] = ['json-form', 'config-editor-empty', 'config-editor-title', 'save-btn'].map(id => document.getElementById(id));
             try {
-                const r = await fetchJSON(`api/config/file/${filename}`);
+                const r = await fetchJSON(`/api/config/file/${filename}?strategy=${strategy}&broker=${broker}&account=${account}`);
                 if (!r.success) { showConfigStatus('Error: ' + r.error, 'error'); return; }
                 title.textContent = filename;
                 cfg.data = r.content;
@@ -4334,16 +4662,35 @@
         
         async function saveConfig() {
             if (!cfg.file || !cfg.data) return;
+            
             try {
-                const r = await fetch(`api/config/file/${cfg.file}`, {
+                const strategy = document.getElementById('config-strategy').value;
+                const broker = document.getElementById('config-broker').value;
+                const account = document.getElementById('config-account').value;
+                
+                if (!strategy || !broker || !account) {
+                    showConfigStatus('Please select strategy, broker and account first', 'error');
+                    return;
+                }
+                
+                showConfigStatus('Saving file...', 'info');
+                
+                const response = await fetch(`/api/config/file/${cfg.file}?strategy=${strategy}&broker=${broker}&account=${account}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: cfg.data })
                 });
-                const res = await r.json();
-                if (res.success) { showConfigStatus('File saved successfully!', 'success'); loadConfigFiles(); }
-                else showConfigStatus('Error: ' + res.error, 'error');
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showConfigStatus('File saved successfully!', 'success');
+                    loadConfigFiles(); // Refresh file list
+                } else {
+                    showConfigStatus('Error: ' + result.error, 'error');
+                }
             } catch (error) {
+                console.error('Error saving config:', error);
                 showConfigStatus('Error saving file: ' + error.message, 'error');
             }
         }
@@ -4351,83 +4698,273 @@
         function renderConfigForm(data) {
             const form = document.getElementById('json-form');
             form.innerHTML = '';
-            const groups = { simple: [], nested: [], array: [] };
+            
+            // Enhanced grouping with better categorization
+            const groups = { 
+                simple: [], 
+                nested: [], 
+                array: [],
+                trading: [],
+                system: [],
+                ui: []
+            };
+            
+            // Categorize fields for better organization
             for (const [key, value] of Object.entries(data)) {
-                if (Array.isArray(value)) groups.array.push([key, value]);
-                else if (typeof value === 'object' && value !== null) groups.nested.push([key, value]);
-                else groups.simple.push([key, value]);
+                const lowerKey = key.toLowerCase();
+                if (Array.isArray(value)) {
+                    groups.array.push([key, value]);
+                } else if (typeof value === 'object' && value !== null) {
+                    // Categorize nested objects
+                    if (['asset', 'margin', 'action', 'order'].some(t => lowerKey.includes(t))) {
+                        groups.trading.push([key, value]);
+                    } else if (['ui', 'display', 'color'].some(t => lowerKey.includes(t))) {
+                        groups.ui.push([key, value]);
+                    } else {
+                        groups.nested.push([key, value]);
+                    }
+                } else {
+                    // Categorize simple fields
+                    if (['symbol', 'ticker', 'qty', 'price', 'multiplier', 'step', 'target'].some(t => lowerKey.includes(t))) {
+                        groups.trading.push([key, value]);
+                    } else if (['enabled', 'debug', 'log'].some(t => lowerKey.includes(t))) {
+                        groups.system.push([key, value]);
+                    } else if (['color', 'display'].some(t => lowerKey.includes(t))) {
+                        groups.ui.push([key, value]);
+                    } else {
+                        groups.simple.push([key, value]);
+                    }
+                }
             }
+            
+            // Render Trading fields first
+            if (groups.trading.length) {
+                const fields = groups.trading.map(([k, v]) => {
+                    if (typeof v === 'object' && v !== null) {
+                        return createNestedFieldGroup(k, v);
+                    } else {
+                        return createSimpleField(k, v);
+                    }
+                }).flat();
+                form.appendChild(createFieldGroup('Trading Configuration', fields, 'trading'));
+            }
+            
+            // Render General fields
             if (groups.simple.length) {
-                const fields = groups.simple.map(([k, v]) => {
-                    const f = document.createElement('div');
-                    f.className = 'json-field';
-                    f.innerHTML = `<label class="json-field-label">${formatLabel(k)}</label>${createInput(k, v)}`;
-                    return f;
-                });
-                form.appendChild(createFieldGroup('General', fields));
+                const fields = groups.simple.map(([k, v]) => createSimpleField(k, v));
+                form.appendChild(createFieldGroup('General', fields, 'general'));
             }
+            
+            // Render System fields
+            if (groups.system.length) {
+                const fields = groups.system.map(([k, v]) => createSimpleField(k, v));
+                form.appendChild(createFieldGroup('System Configuration', fields, 'system'));
+            }
+            
+            // Render nested objects
             groups.nested.forEach(([key, value]) => {
-                const entries = Object.entries(value);
-                const fields = entries.map(([sk, sv]) => {
-                    const f = document.createElement('div');
-                    f.className = 'json-nested-field';
-                    f.innerHTML = `<label>${formatLabel(sk)}</label>${createInput(`${key}.${sk}`, sv, 'updateConfigValue', true)}`;
-                    return f;
-                });
-                const c = document.createElement('div');
-                c.className = 'json-nested-fields';
-                fields.forEach(f => c.appendChild(f));
-                const g = document.createElement('div');
-                g.className = 'json-field-group';
-                g.innerHTML = `<div class="json-field-group-title">${formatLabel(key)} (${entries.length})</div>`;
-                g.appendChild(c);
-                form.appendChild(g);
+                const fields = createNestedFieldGroup(key, value);
+                form.appendChild(createFieldGroup(formatLabel(key), fields, 'nested'));
             });
+            
+            // Render UI fields
+            if (groups.ui.length) {
+                const fields = groups.ui.map(([k, v]) => {
+                    if (typeof v === 'object' && v !== null) {
+                        return createNestedFieldGroup(k, v);
+                    } else {
+                        return createSimpleField(k, v);
+                    }
+                }).flat();
+                form.appendChild(createFieldGroup('UI Configuration', fields, 'ui'));
+            }
+            
+            // Render arrays
             groups.array.forEach(([key, value]) => {
-                const c = document.createElement('div');
-                c.className = 'json-array-field';
-                value.forEach((item, i) => {
-                    const ie = document.createElement('div');
-                    ie.className = 'json-array-item';
-                    ie.innerHTML = `<input type="text" class="json-field-input" data-key="${key}" data-index="${i}" value="${escapeHtml(String(item))}" onchange="updateArrayValue(this)"><button onclick="removeArrayItem('${key}', ${i})">×</button>`;
-                    c.appendChild(ie);
-                });
-                const ab = document.createElement('div');
-                ab.className = 'json-array-add';
-                ab.textContent = '+ Add';
-                ab.onclick = () => { cfg.data[key].push(''); renderConfigForm(cfg.data); };
-                c.appendChild(ab);
-                const g = document.createElement('div');
-                g.className = 'json-field-group';
-                g.innerHTML = `<div class="json-field-group-title">${formatLabel(key)} (${value.length})</div>`;
-                g.appendChild(c);
-                form.appendChild(g);
+                const arrayGroup = createArrayFieldGroup(key, value);
+                form.appendChild(arrayGroup);
             });
+        }
+        
+        function createSimpleField(key, value) {
+            const f = document.createElement('div');
+            f.className = 'json-field';
+            f.innerHTML = `<label class="json-field-label">${formatLabel(key)}</label>${createInput(key, value)}`;
+            return f;
+        }
+        
+        function createNestedFieldGroup(key, value) {
+            const entries = Object.entries(value);
+            return entries.map(([sk, sv]) => {
+                const f = document.createElement('div');
+                f.className = 'json-nested-field';
+                const fullKey = `${key}.${sk}`;
+                f.innerHTML = `<label>${formatLabel(key)}.${formatLabel(sk)}</label>${createInput(fullKey, sv, 'updateConfigValue', true)}`;
+                return f;
+            });
+        }
+        
+        function createArrayFieldGroup(key, value) {
+            const c = document.createElement('div');
+            c.className = 'json-array-field';
+            value.forEach((item, i) => {
+                const ie = document.createElement('div');
+                ie.className = 'json-array-item';
+                ie.innerHTML = `
+                    <span class="array-index">${i + 1}.</span>
+                    <input type="text" class="json-field-input" data-key="${key}" data-index="${i}" 
+                           value="${escapeHtml(String(item))}" onchange="updateArrayValue(this)">
+                `;
+                c.appendChild(ie);
+            });
+            
+            const g = document.createElement('div');
+            g.className = 'json-field-group';
+            g.innerHTML = `<div class="json-field-group-title">${formatLabel(key)} (${value.length} items)</div>`;
+            g.appendChild(c);
+            return g;
         }
         
         // Config editor helpers
         const cfg = { file: null, data: null, decimalStepFields: ['margin', 'multiplier', 'step', 'target'] };
         
-        function createFieldGroup(title, elements) {
+        function createFieldGroup(title, elements, category = 'general') {
             const g = document.createElement('div');
-            g.className = 'json-field-group';
+            g.className = `json-field-group ${category}`;
             g.innerHTML = `<div class="json-field-group-title">${title}</div>`;
-            elements.forEach(e => g.appendChild(e));
+            if (Array.isArray(elements)) {
+                elements.forEach(e => g.appendChild(e));
+            } else {
+                g.appendChild(elements);
+            }
             return g;
         }
         
         function createInput(key, value, onChange = 'updateConfigValue', nested = false) {
-            const attrs = nested ? `data-key="${key}"` : `data-key="${key}"`;
+            const attrs = `data-key="${key}"`;
+            
+            // Handle action fields (0/1 toggles)
             if (key.includes('.')) {
                 const [parent, child] = key.split('.');
-                if (parent === 'action') return `<input type="checkbox" class="json-field-input boolean" data-key="${key}" ${value === 1 ? 'checked' : ''} onchange="updateActionValue(this)">`;
-                if (cfg.decimalStepFields.includes(parent)) return `<input type="number" step="0.1" class="json-field-input number" ${attrs} value="${value}" onchange="${onChange}(this)">`;
+                if (parent === 'action') {
+                    return `<input type="checkbox" class="json-field-input boolean" data-key="${key}" ${value === 1 ? 'checked' : ''} onchange="updateActionValue(this)">`;
+                }
             }
-            if (key === 'order_type') return `<select class="json-field-input" ${attrs} onchange="${onChange}(this)"><option ${value === 'I' ? 'selected' : ''}>I (Intraday)</option><option ${value === 'C' ? 'selected' : ''}>C (CNC)</option></select>`;
-            if (typeof value === 'boolean') return `<input type="checkbox" class="json-field-input boolean" ${attrs} ${value ? 'checked' : ''} onchange="${onChange}(this)">`;
-            if (typeof value === 'number') return `<input type="number" step="any" class="json-field-input number" ${attrs} value="${value}" onchange="${onChange}(this)">`;
+            
+            // Handle order_type dropdown
+            if (key === 'order_type') {
+                return `<select class="json-field-input" ${attrs} onchange="${onChange}(this)">
+                    <option value="I" ${value === 'I' ? 'selected' : ''}>I (Intraday)</option>
+                    <option value="C" ${value === 'C' ? 'selected' : ''}>C (CNC)</option>
+                </select>`;
+            }
+            
+            // Handle booleans with toggle switch
+            if (typeof value === 'boolean') {
+                return `<label class="toggle-switch">
+                    <input type="checkbox" class="json-field-input boolean" ${attrs} ${value ? 'checked' : ''} onchange="${onChange}(this)">
+                    <span class="toggle-slider"></span>
+                </label>`;
+            }
+            
+            // Handle numbers with slider + input
+            if (typeof value === 'number') {
+                const sliderConfig = getSliderConfig(key, value);
+                return `<div class="slider-container">
+                    <input type="range" class="json-slider" ${attrs} 
+                           value="${value}" min="${sliderConfig.min}" max="${sliderConfig.max}" step="${sliderConfig.step}"
+                           oninput="updateSliderValue(this)">
+                    <input type="number" class="json-field-input number slider-value" ${attrs} 
+                           value="${value}" step="${sliderConfig.step}"
+                           onchange="updateInputFromNumber(this)">
+                </div>`;
+            }
+            
+            // Handle text
             return `<input type="text" class="json-field-input" ${attrs} value="${escapeHtml(String(value))}" onchange="${onChange}(this)">`;
         }
+        
+        function getSliderConfig(key, value) {
+            const lowerKey = key.toLowerCase();
+            
+            // Percentage/multiplier fields (0-10 with 0.1 step)
+            if (lowerKey.includes('multiplier') || lowerKey.includes('margin')) {
+                return { min: 0, max: 10, step: 0.1 };
+            }
+            
+            // Step/target fields (0-5 with 0.05 step)
+            if (lowerKey.includes('step') || lowerKey.includes('target')) {
+                return { min: 0, max: 5, step: 0.05 };
+            }
+            
+            // Quantity fields
+            if (lowerKey.includes('qty') || lowerKey.includes('quantity')) {
+                return { min: 1, max: 1000, step: 1 };
+            }
+            
+            // Max orders
+            if (lowerKey.includes('max_orders') || lowerKey.includes('orders')) {
+                return { min: 1, max: 50, step: 1 };
+            }
+            
+            // Time fields
+            if (lowerKey.includes('time') || lowerKey.includes('mins')) {
+                return { min: 1, max: 1000, step: 1 };
+            }
+            
+            // Price fields (large range)
+            if (lowerKey.includes('price') || lowerKey.includes('open') || lowerKey.includes('close') || lowerKey.includes('etf')) {
+                const magnitude = Math.pow(10, Math.floor(Math.log10(Math.abs(value) || 1)));
+                return { min: 0, max: Math.max(value * 2, magnitude * 100), step: magnitude / 100 };
+            }
+            
+            // Default: auto-calculate based on value
+            if (Number.isInteger(value)) {
+                return { min: 0, max: Math.max(value * 2, 100), step: 1 };
+            } else {
+                return { min: 0, max: Math.max(value * 2, 10), step: 0.01 };
+            }
+        }
+        
+        function updateSliderValue(slider) {
+            const key = slider.dataset.key;
+            const value = parseFloat(slider.value);
+            
+            // Update the number input next to the slider
+            const container = slider.parentElement;
+            const numberInput = container.querySelector('.slider-value');
+            if (numberInput) numberInput.value = value;
+            
+            // Update the config data
+            const keys = key.split('.');
+            if (keys.length === 1) {
+                cfg.data[keys[0]] = value;
+            } else {
+                cfg.data[keys[0]][keys[1]] = value;
+            }
+        }
+        
+        function updateInputFromNumber(input) {
+            const key = input.dataset.key;
+            const value = parseFloat(input.value);
+            
+            // Update the slider next to the input
+            const container = input.parentElement;
+            const slider = container.querySelector('.json-slider');
+            if (slider) slider.value = value;
+            
+            // Update the config data
+            const keys = key.split('.');
+            if (keys.length === 1) {
+                cfg.data[keys[0]] = value;
+            } else {
+                cfg.data[keys[0]][keys[1]] = value;
+            }
+        }
+        function formatLabel(key) {
+            return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+        
         function formatLabel(key) {
             return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
         }
@@ -4487,6 +5024,17 @@
         
         function formatJson() {
             // No longer needed with form-based editing
+        }
+        
+        function selectConfigFile(filename) {
+            // Update dropdown
+            const fileSelect = document.getElementById('config-file-select');
+            if (fileSelect) {
+                fileSelect.value = filename;
+            }
+            
+            // Load the file
+            loadConfigFile(filename);
         }
         
         function showConfigStatus(message, type) {
@@ -4968,8 +5516,8 @@
                         </div>
                     `;
                 }
-            } else if (name === 'orderprocessor' || name === 'executionengine') {
-                // OrderProcessor and ExecutionEngine services
+            } else if (name === 'orderprocessor' || name === 'executionengine' || name === 'positionengine') {
+                // OrderProcessor, ExecutionEngine, and PositionEngineHi services
                 if (data.last_heartbeat) {
                     const heartbeatTime = new Date(data.last_heartbeat);
                     const formattedTime = heartbeatTime.toLocaleString();
@@ -5017,7 +5565,7 @@
             
             // Add action buttons for manageable services
             let actionsHtml = '';
-            if (['dataapi', 'orderprocessor', 'executionengine'].includes(name)) {
+            if (['dataapi', 'orderprocessor', 'executionengine','positionengine'].includes(name)) {
                 actionsHtml = `
                     <div class="service-actions">
                         <button class="service-action-btn start-btn" title="Start service" onclick="startService('${name}')">▶️ Start</button>
@@ -5066,7 +5614,8 @@
                 'redis': 'Redis',
                 'dataapi': 'DataAPI (TickEngine)',
                 'orderprocessor': 'Order Processor',
-                'executionengine': 'Execution Engine'
+                'executionengine': 'Execution Engine',
+                "positionengine": "Position Manager"
             };
             return names[name] || name.charAt(0).toUpperCase() + name.slice(1);
         }
@@ -5126,12 +5675,16 @@
             }
         }
         
+        // Track current service for refresh
+        let currentLogService = null;
+        
         async function viewServiceLogs(serviceName) {
             try {
                 const response = await fetch(`api/services/logs/${serviceName}`);
                 const data = await response.json();
                 
                 if (data.success) {
+                    currentLogService = serviceName;
                     openLogViewer(serviceName, data.content, data.path);
                 } else {
                     showServiceNotification(`✗ Error: ${data.error}`, 'error');
@@ -5141,22 +5694,72 @@
             }
         }
         
+        async function refreshServiceLogs() {
+            if (!currentLogService) return;
+            
+            const refreshBtn = document.getElementById('log-refresh-btn');
+            refreshBtn.disabled = true;
+            refreshBtn.textContent = '⏳ Loading...';
+            
+            try {
+                const response = await fetch(`api/services/logs/${currentLogService}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const filteredContent = filterDebugLogs(data.content);
+                    const logContent = document.getElementById('log-content');
+                    logContent.textContent = filteredContent;
+                    
+                    // Auto-scroll to bottom (streaming effect)
+                    const logBody = document.querySelector('.log-body');
+                    logBody.scrollTop = logBody.scrollHeight;
+                    
+                    showServiceNotification('✓ Logs refreshed', 'success');
+                } else {
+                    showServiceNotification(`✗ Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showServiceNotification(`✗ Error: ${error.message}`, 'error');
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.textContent = '🔄 Refresh';
+            }
+        }
+        
+        function filterDebugLogs(content) {
+            // Filter out lines containing DEBUG
+            return content
+                .split('\n')
+                .filter(line => !line.includes('DEBUG') && !line.includes('[DEBUG]'))
+                .join('\n');
+        }
+        
         function openLogViewer(serviceName, content, path) {
             const modal = document.getElementById('log-viewer-modal');
             const title = document.getElementById('log-viewer-title');
             const logContent = document.getElementById('log-content');
             const pathDisplay = document.getElementById('log-path');
             
+            // Filter out DEBUG logs
+            const filteredContent = filterDebugLogs(content);
+            
             title.textContent = `${formatServiceName(serviceName)} - Logs`;
-            logContent.textContent = content;
+            logContent.textContent = filteredContent;
             pathDisplay.textContent = `Path: ${path}`;
             
             modal.style.display = 'block';
+            
+            // Auto-scroll to bottom
+            setTimeout(() => {
+                const logBody = document.querySelector('.log-body');
+                logBody.scrollTop = logBody.scrollHeight;
+            }, 100);
         }
         
         function closeLogViewer() {
             const modal = document.getElementById('log-viewer-modal');
             modal.style.display = 'none';
+            currentLogService = null;
         }
         
         function downloadLogs() {
@@ -5519,13 +6122,15 @@
                     const buyCount = orders.filter(o => (o.side || '').toUpperCase() === 'BUY' || (o.side || '').toUpperCase() === 'B').length;
                     const sellCount = orders.filter(o => (o.side || '').toUpperCase() === 'SELL' || (o.side || '').toUpperCase() === 'S').length;
                     const completeCount = orders.filter(o => (o.status || '').toUpperCase().includes('COMPLETE') || (o.status || '').toUpperCase().includes('FILLED')).length;
-                    const rejectedCount = orders.filter(o => (o.status || '').toUpperCase().includes('REJECT') || (o.status || '').toUpperCase().includes('CANCEL')).length;
+                    const cancelledCount = orders.filter(o => (o.status || '').toUpperCase().includes('CANCEL')).length;
+                    const rejectedCount = orders.filter(o => (o.status || '').toUpperCase().includes('REJECT')).length;
                     
                     // Update stats
                     document.getElementById('redis-stat-total').textContent = orders.length;
                     document.getElementById('redis-stat-buy').textContent = buyCount;
                     document.getElementById('redis-stat-sell').textContent = sellCount;
                     document.getElementById('redis-stat-complete').textContent = completeCount;
+                    document.getElementById('redis-stat-cancelled').textContent = cancelledCount;
                     document.getElementById('redis-stat-rejected').textContent = rejectedCount;
                     
                     // Render orders
@@ -5535,19 +6140,29 @@
                         emptyState.innerHTML = '<h3>No Orders Found</h3><p>No orders found for the selected filters</p>';
                         emptyState.style.display = 'block';
                     } else {
-                        tbody.innerHTML = orders.map(order => `
-                            <tr>
-                                <td><strong>${order.symbol || '-'}</strong></td>
-                                <td>${getSideBadge(order.side)}</td>
-                                <td>${getRedisStatusBadge(order.status)}</td>
-                                <td>${order.order_qty || order.qty || '-'}</td>
-                                <td>${order.filled_qty || order.fillshares || '0'}</td>
-                                <td>${order.price ? '₹' + parseFloat(order.price).toFixed(2) : '-'}</td>
-                                <td>${order.remarks || order.rejection_reason || '-'}</td>
-                                <td>${order.order_time || '-'}</td>
-                                <td>${order.exch_timestamp || '-'}</td>
-                            </tr>
-                        `).join('');
+                        tbody.innerHTML = orders.map(order => {
+                            // Check if order is open/pending
+                            const status = (order.status || '').toUpperCase();
+                            const isOpen = status.includes('OPEN') || status.includes('PENDING');
+                            const actionButton = isOpen 
+                                ? `<button class="btn btn-danger" onclick="cancelRedisOrder('${order.broker || ''}', '${order.account || ''}', '${order.exchange || ''}', '${order.symbol || ''}', '${order.order_id || order.id || ''}')" style="padding: 5px 10px; font-size: 0.85rem;">Cancel</button>`
+                                : '-';
+                            
+                            return `
+                                <tr>
+                                    <td><strong>${order.symbol || '-'}</strong></td>
+                                    <td>${getSideBadge(order.side)}</td>
+                                    <td>${getRedisStatusBadge(order.status)}</td>
+                                    <td>${order.order_qty || order.qty || '-'}</td>
+                                    <td>${order.filled_qty || order.fillshares || '0'}</td>
+                                    <td>${order.price ? '₹' + parseFloat(order.price).toFixed(2) : '-'}</td>
+                                    <td>${order.remarks || order.rejection_reason || '-'}</td>
+                                    <td>${order.order_time || '-'}</td>
+                                    <td>${order.exch_timestamp || '-'}</td>
+                                    <td>${actionButton}</td>
+                                </tr>
+                            `;
+                        }).join('');
                         tableContainer.style.display = 'block';
                     }
                 } else {
@@ -5563,6 +6178,44 @@
             }
         }
         
+        async function cancelRedisOrder(broker, account, exchange, symbol, orderId) {
+            if (!orderId) {
+                showToast('❌ Order ID not found', 2000);
+                return;
+            }
+            
+            try {
+                const response = await fetch('api/redis-orders/cancel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        broker: broker,
+                        account: account,
+                        exchange: exchange,
+                        symbol: symbol,
+                        order_id: orderId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`✅ Cancel request sent for ${symbol}. Waiting for OMS...`, 2000);
+                    // Wait 2 seconds for OMS to process cancel, then refresh
+                    setTimeout(() => {
+                        loadRedisOrders();
+                    }, 2000);
+                } else {
+                    showToast(`❌ Error: ${data.error || 'Failed to cancel order'}`, 3000);
+                }
+            } catch (error) {
+                console.error('Error cancelling order:', error);
+                showToast(`❌ Network error while cancelling order`, 3000);
+            }
+        }
+        
         function resetRedisFilters() {
             document.getElementById('redis-broker').value = '';
             document.getElementById('redis-account').innerHTML = '<option value="">Select Account</option>';
@@ -5575,7 +6228,7 @@
             setDropdownEnabled('redis-status-dropdown', false);
             
             // Reset stats
-            ['redis-stat-total', 'redis-stat-buy', 'redis-stat-sell', 'redis-stat-complete', 'redis-stat-rejected'].forEach(id => {
+            ['redis-stat-total', 'redis-stat-buy', 'redis-stat-sell', 'redis-stat-complete', 'redis-stat-cancelled', 'redis-stat-rejected'].forEach(id => {
                 document.getElementById(id).textContent = '-';
             });
             
@@ -6706,8 +7359,8 @@
         // Refresh configs from JSON files
         async function refreshCMConfigs() {
             const strategy = document.getElementById('cm-strategy').value;
-            const broker = document.getElementById('cm-broker').value;
-            const account = document.getElementById('cm-account').value;
+            const broker   = document.getElementById('cm-broker').value;
+            const account  = document.getElementById('cm-account').value;
             
             if (!strategy || !broker || !account) {
                 alert('Please select Strategy, Broker, and Account first');
@@ -6728,7 +7381,7 @@
             }
         }
         
-        // Dummy function: Update LTP for a single config
+        
         async function updateConfigLTP(btn,ticker, strategy, broker, account, configName) {
             if (btn.disabled) return;
             const originalText = btn.innerText;
@@ -6755,8 +7408,7 @@
                 btn.innerText = originalText;
             }
         }
-        
-        // Dummy function: Update Open price for a single config
+
         async function updateConfigOpen(btn,ticker, strategy, broker, account, index) {
             if (btn.disabled) return;
             const originalText = btn.innerText;
@@ -6784,13 +7436,13 @@
             }
         }
         
-         async function updateConfigClose(btn,ticker, strategy, broker, account, index) {
+        async function updateConfigClose(btn,ticker, strategy, broker, account, index) {
             if (btn.disabled) return;
             const originalText = btn.innerText;
 
             try{
                 btn.disabled = true;
-                btn.innerText = "Updating...";
+                btn.innerText = "📊 Updating...";
 
                 const response = await fetchJSON(`/api/bot/update_close?strategy=${strategy}&broker=${broker}&account=${account}&ticker=${ticker}&index=${index}`);
                 if (response.success) {
@@ -6810,28 +7462,92 @@
             }
         }
         
-        // Dummy function: Update LTP for all configs
-        function updateAllLTP() {
-            console.log('Update All LTP button clicked');
-            const tbody = document.getElementById('cm-contents-body');
-            const configCount = tbody.rows ? tbody.rows.length : 0;
-            alert(`Dummy Function: Update LTP for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        async function updateAllLTP(btn) {
+            if (btn.disabled) return;
+            const originalText  = btn.innerText;
+            const strategy      = document.getElementById('cm-strategy').value;
+            const broker        = document.getElementById('cm-broker').value;
+            const account       = document.getElementById('cm-account').value;
+
+            try{
+                btn.disabled = true;
+                btn.innerText = "🌅 Updating...";
+                const response = await fetchJSON(`/api/bot/update_all_ltp?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`LTP updated for all configs`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update LTP for all configs');
+                }
+
+            } catch (error) {
+                console.error('Error updating LTP for all configs:', error);
+                onCMAccountChange()
+                showToast(`Error updating LTP for all configs: ${error.message}`, 4000);
+            } finally {
+                btn.disabled  = false;
+                btn.innerText = originalText;
+            }
         }
         
         // Dummy function: Update Open for all configs
-        function updateAllOpen() {
-            console.log('Update All Open button clicked');
-            const tbody = document.getElementById('cm-contents-body');
-            const configCount = tbody.rows ? tbody.rows.length : 0;
-            alert(`Dummy Function: Update Open for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        async function updateAllOpen(btn) {
+            if (btn.disabled) return;
+            const originalText  = btn.innerText;
+            const strategy      = document.getElementById('cm-strategy').value;
+            const broker        = document.getElementById('cm-broker').value;
+            const account       = document.getElementById('cm-account').value;
+
+            try{
+                btn.disabled = true;
+                btn.innerText = "🌙 Updating...";
+                const response = await fetchJSON(`/api/bot/update_all_open?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`Asset Open updated for all configs`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update Asset Open for all configs');
+                }
+
+            } catch (error) {
+                console.error('Error updating Asset Open for all configs:', error);
+                onCMAccountChange()
+                showToast(`Error updating Asset Open for all configs: ${error.message}`, 4000);
+            } finally {
+                btn.disabled  = false;
+                btn.innerText = originalText;
+            }
+            
         }
         
         // Dummy function: Update Close for all configs
-        function updateAllClose() {
-            console.log('Update All Close button clicked');
-            const tbody = document.getElementById('cm-contents-body');
-            const configCount = tbody.rows ? tbody.rows.length : 0;
-            alert(`Dummy Function: Update Close for all configs\\n\\nTotal configs: ${configCount}\\n\\n(Implementation pending)`);
+        async function updateAllClose(btn) {
+            if (btn.disabled) return;
+            const originalText  = btn.innerText;
+            const strategy      = document.getElementById('cm-strategy').value;
+            const broker        = document.getElementById('cm-broker').value;
+            const account       = document.getElementById('cm-account').value;
+
+            try{
+                btn.disabled = true;
+                btn.innerText = "Updating...";
+                const response = await fetchJSON(`/api/bot/update_all_close?strategy=${strategy}&broker=${broker}&account=${account}`);
+                if (response.success) {
+                    onCMAccountChange()
+                    showToast(`Asset Close updated for all configs`, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to update Asset Close for all configs');
+                }
+
+            } catch (error) {
+                console.error('Error updating Asset Close for all configs:', error);
+                onCMAccountChange()
+                showToast(`Error updating Asset Close for all configs: ${error.message}`, 4000);
+            } finally {
+                btn.disabled  = false;
+                btn.innerText = originalText;
+            }
+            
         }
 
         function showToast(message, duration = 2000) {
@@ -6849,6 +7565,7 @@
             loadAllPositions();
             loadBotStrategies();
             loadCMStrategies();
+            loadConfigStrategies(); // Load strategies for config editor
         });
     </script>
 </body>

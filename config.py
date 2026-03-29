@@ -32,6 +32,11 @@ class Config:
             "COMMAND":"/mnt/DATA/LINUX_VENVS/FMV_SCALPER/bin/python /home/algobaba/DATALORE/FairEdge/execution_engine/execution_manager.py",
             "LOGS_PATH":"/home/algobaba/DATALORE/logs/EXE_LOGS/",
             "LOG_NAME":"execution_engine.log"
+        },
+        "positionengine":{
+            "COMMAND":"/mnt/DATA/LINUX_VENVS/FMV_SCALPER/bin/python /home/algobaba/DATALORE/FairEdge/position_engine/position_manager.py",
+            "LOGS_PATH":"/home/algobaba/DATALORE/logs/POS_LOGS/",
+            "LOG_NAME":"position_manager.log"
         }
     }
 
@@ -45,6 +50,11 @@ class Config:
     #CONFIGS
     CONFIG_BASE_PATH = "/home/algobaba/DATALORE/CONFIGS/"
     LOGS_BASE_PATH   = "/home/algobaba/DATALORE/logs/"
+
+    proxies = {
+        "http": "socks5h://127.0.0.1:1080",
+        "https": "socks5h://127.0.0.1:1080"
+    }
     
     @classmethod
     def get_connection_string(cls):
